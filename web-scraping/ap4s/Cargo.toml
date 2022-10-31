@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 openssl = { version = "0.10", features = ["vendored"] }
 reqwest = {version = "0.11.12", features = ["blocking"]}
-per = "0.12.0"
-url = "2.3.1"
+scraper = "0.12.0"
+urlencoding="2.1.2"
+regex = "1.6.0"
