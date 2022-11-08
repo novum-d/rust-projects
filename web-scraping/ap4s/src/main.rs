@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use headless_chrome::{Browser, LaunchOptionsBuilder, Tab};
 use regex::Regex;
-use urlencoding::decode;
 
 #[allow(unused_must_use)]
 fn main() {
@@ -36,9 +35,9 @@ fn main() {
     tab.find_element_by_xpath(r#"//*[@id="mG61Hd"]/div[2]/div/div[3]/div[1]/div[1]/div/span"#)
         .unwrap()
         .click();
-    search_questions(
+    println!("{:#?}",search_questions(
         "https://www.google.com/search?q=AIにおける過学習の説明として、最も適切なものはどれか。",
-    );
+    ));
     // let png = tab
     //     .capture_screenshot(
     //         headless_chrome::protocol::cdp::Page::CaptureScreenshotFormatOption::Png,
@@ -59,38 +58,24 @@ fn search_questions(url: &str) -> Vec<String> {
     tab.navigate_to(url);
     tab.wait_until_navigated();
 
-    let links = tab.find_elements("a").unwrap();
-    let rx = Regex::new(r"/url\?q=https?://(|www)\...-siken\.com.*").unwrap();
-
-    println!("----------------------------------------------------------");
-    links.iter().map(|x| {
-        println!("{:?}", x);
-        ""
-    });
-
-    // "//*[@id="rso"]/div[1]/div/div/div[1]/div/div/div[1]/div/a"
-    let response = reqwest::blocking::get(url).unwrap().text().unwrap();
-    let document = scraper::Html::parse_document(&response);
-    let title_selector = scraper::Selector::parse("a").unwrap();
-    let rx = Regex::new(r"/url\?q=https?://(|www)\...-siken\.com.*").unwrap();
-    document
-        .select(&title_selector)
+    let rx = Regex::new(r#"^https?://(|www)\...-siken\.com.*$"#).unwrap();
+    tab.find_elements("a")
+        .unwrap()
+        .iter()
         .map(|x| {
-            let href = decode(x.value().attr("href").unwrap())
+            match x
+                .get_attributes()
                 .unwrap()
-                .into_owned();
-            if rx.is_match(&href) && href.contains("&sa=") {
-                href.replace("/url?q=", "")
-                    .split_once("&sa=")
-                    .unwrap()
-                    .0
-                    .to_string()
-            } else {
-                String::from("")
+                .unwrap()
+                .iter()
+                .find(|x| rx.is_match(x))
+            {
+                Some(url) => url.to_string(),
+                None => String::from(""),
             }
         })
         .filter(|x| !x.is_empty())
-        .collect()
+        .collect::<Vec<String>>()
 }
 
 #[allow(unused_must_use)]
