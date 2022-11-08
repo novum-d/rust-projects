@@ -13,11 +13,7 @@ fn main() {
     let id = String::from("90223");
     let name = String::from("浜田知季");
 
-    let options = LaunchOptionsBuilder::default()
-        .window_size(Some((1920, 1080)))
-        .build()
-        .expect("Fail to build");
-    let browser = Browser::new(options).unwrap();
+    let browser = Browser::default().unwrap();
     let tab = browser.wait_for_initial_tab().unwrap();
 
     // navigate to google form website
@@ -32,61 +28,22 @@ fn main() {
         .click();
 
     // submit
-    tab.find_element_by_xpath(r#"//*[@id="mG61Hd"]/div[2]/div/div[3]/div[1]/div[1]/div/span"#)
-        .unwrap()
-        .click();
-    println!("{:#?}",search_questions(
+    tab.find_element_by_xpath(xpath::Submit).unwrap().click();
+
+    find_website_links(
         "https://www.google.com/search?q=AIにおける過学習の説明として、最も適切なものはどれか。",
-    ));
-    // let png = tab
-    //     .capture_screenshot(
-    //         headless_chrome::protocol::cdp::Page::CaptureScreenshotFormatOption::Png,
-    //         None,
-    //         None,
-    //         true,
-    //     )
-    //     .unwrap();
-    // std::fs::write("./page.png", png).unwrap();
-}
-
-#[allow(unused_must_use)]
-fn search_questions(url: &str) -> Vec<String> {
-    let browser = Browser::default().unwrap();
-    let tab = browser.wait_for_initial_tab().unwrap();
-
-    // navigate to past tests website
-    tab.navigate_to(url);
-    tab.wait_until_navigated();
-
-    let rx = Regex::new(r#"^https?://(|www)\...-siken\.com.*$"#).unwrap();
-    tab.find_elements("a")
-        .unwrap()
-        .iter()
-        .map(|x| {
-            match x
-                .get_attributes()
-                .unwrap()
-                .unwrap()
-                .iter()
-                .find(|x| rx.is_match(x))
-            {
-                Some(url) => url.to_string(),
-                None => String::from(""),
-            }
-        })
-        .filter(|x| !x.is_empty())
-        .collect::<Vec<String>>()
+    );
 }
 
 #[allow(unused_must_use)]
 fn enter_student_info(tab: &Arc<Tab>, student: &Student) {
-    tab.find_element_by_xpath(&xpath::Form::ClassId.value())
+    tab.find_element_by_xpath(&xpath::Student::ClassId.value())
         .unwrap()
         .type_into(&student.class_id);
-    tab.find_element_by_xpath(&xpath::Form::Name.value())
+    tab.find_element_by_xpath(&xpath::Student::Name.value())
         .unwrap()
         .type_into(&student.id);
-    tab.find_element_by_xpath(&xpath::Form::Id.value())
+    tab.find_element_by_xpath(&xpath::Student::Id.value())
         .unwrap()
         .type_into(&student.name);
 }
@@ -105,23 +62,53 @@ fn enter_answear(tab: &Arc<Tab>) {
     ];
 }
 
+#[allow(unused_must_use)]
+fn find_website_links(url: &str) -> Vec<String> {
+    let browser = Browser::default().unwrap();
+    let tab = browser.wait_for_initial_tab().unwrap();
+
+    // navigate to past tests website
+    tab.navigate_to(url);
+    tab.wait_until_navigated();
+
+    let rx = Regex::new(r#"^https?://(|www)\...-siken\.com.*$"#).unwrap();
+    let els = tab.find_elements("a").unwrap();
+    let attrs = els.iter().map(|x| {
+        println!("{:#?}", x.get_description());
+        x.get_attributes().unwrap().unwrap()
+    });
+    let mut urls = vec![];
+    attrs.for_each(|x| {
+        x.iter().for_each(|x| {
+            if rx.is_match(x) {
+                urls.push(x.clone());
+            }
+        })
+    });
+    urls
+}
+
+fn get_questions(tab: &Arc<Tab>) {}
+
 mod xpath {
 
-    pub enum Form {
+    pub const Submit: &str = r#"//*[@id="mG61Hd"]/div[2]/div/div[3]/div[1]/div[1]/div/span"#;
+
+    pub enum Student {
         Id,
         Name,
         ClassId,
     }
 
-    impl Form {
+    impl Student {
         pub fn value(&self) -> String {
             let xpath = |x: i64| {
                 format!("//*[@id=\"mG61Hd\"]/div[2]/div/div[2]/div[{}]/div/div/div[2]/div/div[1]/div/div[1]/input", x)
             };
             match *self {
-                Form::Id => xpath(3),
-                Form::Name => xpath(2),
-                Form::ClassId => xpath(1),
+                Student::Id => xpath(3),
+                Student::Name => xpath(2),
+                Student::ClassId => xpath(1),
             }
         }
     }
