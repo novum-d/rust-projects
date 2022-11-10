@@ -23,12 +23,15 @@ fn main() {
     // enter the student infomation
     enter_student_info(&tab, &Student { class_id, id, name });
 
+    // enter the collect.
+    enter_answear(&tab);
+
     tab.find_element_by_xpath(r#"//*[@id="mG61Hd"]/div[2]/div/div[2]/div[4]/div/div/div[2]/div[1]/div/span/div/div[1]/label/div/div[2]/div/span"#)
         .unwrap()
         .click();
 
     // submit
-    tab.find_element_by_xpath(xpath::Submit).unwrap().click();
+    tab.find_element_by_xpath(xpath::SUBMIT).unwrap().click();
 
     find_website_links(
         "https://www.google.com/search?q=AIにおける過学習の説明として、最も適切なものはどれか。",
@@ -50,6 +53,10 @@ fn enter_student_info(tab: &Arc<Tab>, student: &Student) {
 
 #[allow(unused_must_use)]
 fn enter_answear(tab: &Arc<Tab>) {
+    let links = get_questions(tab)
+        .iter()
+        .map(|x| find_website_links(&format!("https://www.google.com/search?q={}", x)))
+        .collect::<Vec<Vec<String>>>();
     let answers = vec![
         tab.find_elements_by_xpath(&xpath::Answear::A.value())
             .unwrap(),
@@ -73,10 +80,7 @@ fn find_website_links(url: &str) -> Vec<String> {
 
     let rx = Regex::new(r#"^https?://(|www)\...-siken\.com.*$"#).unwrap();
     let els = tab.find_elements("a").unwrap();
-    let attrs = els.iter().map(|x| {
-        println!("{:#?}", x.get_description());
-        x.get_attributes().unwrap().unwrap()
-    });
+    let attrs = els.iter().map(|x| x.get_attributes().unwrap().unwrap());
     let mut urls = vec![];
     attrs.for_each(|x| {
         x.iter().for_each(|x| {
@@ -88,11 +92,22 @@ fn find_website_links(url: &str) -> Vec<String> {
     urls
 }
 
-fn get_questions(tab: &Arc<Tab>) {}
+#[allow(unused_must_use)]
+fn get_questions(tab: &Arc<Tab>) -> Vec<String> {
+    tab.find_elements_by_xpath(r#"//*[@class="M7eMe"]/span"#)
+        .unwrap()
+        .iter()
+        .map(|x| {
+            x.get_description().unwrap().children.unwrap()[0]
+                .node_value
+                .clone()
+        })
+        .collect()
+}
 
 mod xpath {
 
-    pub const Submit: &str = r#"//*[@id="mG61Hd"]/div[2]/div/div[3]/div[1]/div[1]/div/span"#;
+    pub const submit: &str = r#"//*[@id="mG61Hd"]/div[2]/div/div[3]/div[1]/div[1]/div/span"#;
 
     pub enum Student {
         Id,
@@ -142,4 +157,17 @@ struct Student {
     id: String,
     name: String,
     class_id: String,
+}
+
+pub enum Url {
+    GoogleForm(String),
+    GoogleSearch(String),
+}
+
+impl Url {
+    pub fn value(&self) -> String {
+        match *self {
+            Url::GoogleSearch => |title| format!("https://www.google.com/search?q={}", title),
+        }
+    }
 }
