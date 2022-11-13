@@ -40,7 +40,7 @@ fn main() {
     type_student_info(&Student { class_id, id, name });
 
     // type the collects.
-    type_answer();
+    type_answers();
 
     // submit
     TAB.get()
@@ -49,67 +49,39 @@ fn main() {
         .unwrap()
         .click();
 
-    let png = TAB
-        .get()
-        .unwrap()
-        .capture_screenshot(Png, None, None, true)
-        .unwrap();
-    std::fs::write("./last.png", png);
-
     println!("...Done");
 }
 
 #[allow(unused_must_use)]
 fn type_student_info(student: &Student) {
-    TAB.get()
-        .unwrap()
-        .find_element_by_xpath(&google_form::Student::ClassId.to_string())
-        .unwrap()
-        .type_into(&student.class_id);
-    TAB.get()
-        .unwrap()
-        .find_element_by_xpath(&google_form::Student::Name.to_string())
-        .unwrap()
-        .type_into(&student.id);
-    TAB.get()
-        .unwrap()
-        .find_element_by_xpath(&google_form::Student::Id.to_string())
-        .unwrap()
-        .type_into(&student.name);
+    let type_an_student_info = |stu_info: &str, stu_xpath: String| {
+        TAB.get()
+            .unwrap()
+            .find_element_by_xpath(&stu_xpath)
+            .unwrap()
+            .type_into(stu_info);
+    };
+    type_an_student_info(&student.class_id, google_form::Student::ClassId.to_string());
+    type_an_student_info(&student.id, google_form::Student::ClassId.to_string());
+    type_an_student_info(&student.name, google_form::Student::ClassId.to_string());
 }
 
 #[allow(unused_must_use)]
-fn type_answer() {
+fn type_answers() {
     let answers = get_answers();
     for (i, ans) in (0_i32..).zip(answers.iter()) {
         match ans.to_owned() {
             ans if ans == Answers::A.to_string() => {
-                TAB.get()
-                    .unwrap()
-                    .find_element_by_xpath(&google_form::Answers::A(i).to_string())
-                    .unwrap()
-                    .click();
+                type_an_answer(google_form::Answers::A(i).to_string())
             }
             ans if ans == Answers::I.to_string() => {
-                TAB.get()
-                    .unwrap()
-                    .find_element_by_xpath(&google_form::Answers::I(i).to_string())
-                    .unwrap()
-                    .click();
+                type_an_answer(google_form::Answers::I(i).to_string())
             }
             ans if ans == Answers::U.to_string() => {
-                TAB.get()
-                    .unwrap()
-                    .find_element_by_xpath(&google_form::Answers::U(i).to_string())
-                    .unwrap()
-                    .click();
+                type_an_answer(google_form::Answers::U(i).to_string())
             }
             ans if ans == Answers::E.to_string() => {
-                TAB.get()
-                    .unwrap()
-                    .find_element_by_xpath(&google_form::Answers::E(i).to_string())
-                    .unwrap()
-                    .click();
+                type_an_answer(google_form::Answers::E(i).to_string())
             }
             _ => (),
         }
@@ -117,7 +89,7 @@ fn type_answer() {
 }
 
 #[allow(unused_must_use)]
-fn type_answear(ans_xpath: String) {
+fn type_an_answer(ans_xpath: String) {
     TAB.get()
         .unwrap()
         .find_element_by_xpath(&ans_xpath)
@@ -181,19 +153,19 @@ fn get_answers() -> Vec<String> {
                 let num = input.trim().parse::<i32>().unwrap_or(0);
                 match num {
                     1 => {
-                        type_answear(google_form::Answers::A(i).to_string());
+                        type_an_answer(google_form::Answers::A(i).to_string());
                         break;
                     }
                     2 => {
-                        type_answear(google_form::Answers::I(i).to_string());
+                        type_an_answer(google_form::Answers::I(i).to_string());
                         break;
                     }
                     3 => {
-                        type_answear(google_form::Answers::U(i).to_string());
+                        type_an_answer(google_form::Answers::U(i).to_string());
                         break;
                     }
                     4 => {
-                        type_answear(google_form::Answers::E(i).to_string());
+                        type_an_answer(google_form::Answers::E(i).to_string());
                         break;
                     }
                     _ => {
@@ -208,7 +180,7 @@ fn get_answers() -> Vec<String> {
 
 fn rm_symbol(ans: &str) -> String {
     let mut answer = ans.to_owned();
-    answer.retain(|c| !r#"()ーも用有、，,？?。・ .;:"#.contains(c));
+    answer.retain(|c| !r#"()ーも用有はて、，,？?。・ .;:"#.contains(c));
     answer
 }
 
