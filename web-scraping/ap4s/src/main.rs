@@ -1,15 +1,19 @@
+use std::time;
 use std::{
     fmt::{self},
     io,
     sync::Arc,
 };
 
-use headless_chrome::{
-    protocol::cdp::Page::CaptureScreenshotFormatOption::Png, Browser, Element, Tab,
-};
+use headless_chrome::LaunchOptions;
+use headless_chrome::{protocol::cdp::Page::CaptureScreenshotFormatOption::Png, Browser, Element};
+use once_cell::sync::OnceCell;
 use regex::Regex;
+use urlencoding::encode;
 
 use crate::xpath::{google_form, siken_dot_com};
+
+static TAB: OnceCell<Arc<headless_chrome::Tab>> = OnceCell::new();
 
 #[allow(unused_must_use)]
 fn main() {
@@ -18,74 +22,91 @@ fn main() {
     let name = String::from("浜田知季");
     let form_url = r#"https://docs.google.com/forms/d/e/1FAIpQLScRkNwFH-sXyyPK-pYyP8pfCpXo5-I1JyNzB0wo1F_9RXUoJQ/viewform"#;
 
-    let browser = Browser::default().unwrap();
-    let form_tab = browser.wait_for_initial_tab().unwrap();
+    let option = LaunchOptions {
+        headless: true,
+        idle_browser_timeout: time::Duration::from_secs(200),
+        ..Default::default()
+    };
+    let browser = Browser::new(option).unwrap();
+    TAB.set(browser.wait_for_initial_tab().unwrap());
 
     println!("Now crawling...");
 
     // navigate to the google form website.
-    form_tab.navigate_to(form_url);
-    form_tab.wait_until_navigated();
+    TAB.get().unwrap().navigate_to(form_url);
+    TAB.get().unwrap().wait_until_navigated();
 
     // type the student infomation.
-    type_student_info(&form_tab, &Student { class_id, id, name });
+    type_student_info(&Student { class_id, id, name });
 
     // type the collects.
-    type_answer(&form_tab);
+    type_answer();
 
     // submit
-    form_tab
+    TAB.get()
+        .unwrap()
         .find_element_by_xpath(google_form::SUBMIT)
         .unwrap()
         .click();
 
-    let png = form_tab.capture_screenshot(Png, None, None, true).unwrap();
+    let png = TAB
+        .get()
+        .unwrap()
+        .capture_screenshot(Png, None, None, true)
+        .unwrap();
     std::fs::write("./last.png", png);
 
     println!("...Done");
 }
 
 #[allow(unused_must_use)]
-fn type_student_info(form_tab: &Arc<Tab>, student: &Student) {
-    form_tab
+fn type_student_info(student: &Student) {
+    TAB.get()
+        .unwrap()
         .find_element_by_xpath(&google_form::Student::ClassId.to_string())
         .unwrap()
         .type_into(&student.class_id);
-    form_tab
+    TAB.get()
+        .unwrap()
         .find_element_by_xpath(&google_form::Student::Name.to_string())
         .unwrap()
         .type_into(&student.id);
-    form_tab
+    TAB.get()
+        .unwrap()
         .find_element_by_xpath(&google_form::Student::Id.to_string())
         .unwrap()
         .type_into(&student.name);
 }
 
 #[allow(unused_must_use)]
-fn type_answer(form_tab: &Arc<Tab>) {
-    let answers = get_answers(form_tab);
+fn type_answer() {
+    let answers = get_answers();
     for (i, ans) in (0_i32..).zip(answers.iter()) {
         match ans.to_owned() {
             ans if ans == Answers::A.to_string() => {
-                form_tab
+                TAB.get()
+                    .unwrap()
                     .find_element_by_xpath(&google_form::Answers::A(i).to_string())
                     .unwrap()
                     .click();
             }
             ans if ans == Answers::I.to_string() => {
-                form_tab
+                TAB.get()
+                    .unwrap()
                     .find_element_by_xpath(&google_form::Answers::I(i).to_string())
                     .unwrap()
                     .click();
             }
             ans if ans == Answers::U.to_string() => {
-                form_tab
+                TAB.get()
+                    .unwrap()
                     .find_element_by_xpath(&google_form::Answers::U(i).to_string())
                     .unwrap()
                     .click();
             }
             ans if ans == Answers::E.to_string() => {
-                form_tab
+                TAB.get()
+                    .unwrap()
                     .find_element_by_xpath(&google_form::Answers::E(i).to_string())
                     .unwrap()
                     .click();
@@ -96,36 +117,47 @@ fn type_answer(form_tab: &Arc<Tab>) {
 }
 
 #[allow(unused_must_use)]
-fn get_answers(form_tab: &Arc<Tab>) -> Vec<String> {
-    println!("{:#?}", get_questions(form_tab));
-    let links = get_questions(form_tab)
+fn type_answear(ans_xpath: String) {
+    TAB.get()
+        .unwrap()
+        .find_element_by_xpath(&ans_xpath)
+        .unwrap()
+        .click();
+}
+
+#[allow(unused_must_use)]
+fn get_answers() -> Vec<String> {
+    let browser = Browser::default().unwrap();
+    let search_tab = browser.wait_for_initial_tab().unwrap();
+
+    let questions = get_questions();
+    let urls_of_question = questions
         .iter()
         .map(|ans| {
-            // println!("{}", ans.to_owned());
-            let tp = (
+            (
                 ans.to_owned(),
-                find_website_links(&Url::GoogleSearch(ans).to_string()),
-            );
-            // println!("{}", ans.to_owned());
-            tp
+                find_website_links(&Url::GoogleSearch(&encode(ans)).to_string(), &search_tab),
+            )
         })
         .collect::<Vec<(String, Vec<String>)>>();
+
     let mut collects = Vec::new();
     let browser = Browser::default().unwrap();
     let siken_tab = browser.wait_for_initial_tab().unwrap();
 
-    'top: for (i, link) in (0_i32..).zip(links.iter()) {
+    'top: for (i, uoq) in (0_i32..).zip(urls_of_question.iter()) {
         let collect_cnt = collects.len();
-        for url in link.1.iter() {
+        for url in uoq.1.iter() {
             siken_tab.navigate_to(url);
             siken_tab.wait_until_navigated();
+
             let ans = get_node_value(
                 &siken_tab
                     .find_element_by_xpath(&siken_dot_com::Question::Answer.to_string())
                     .unwrap(),
             );
-            println!("{}", collect_cnt);
-            if rm_symbol(&ans) == rm_symbol(&link.0) {
+            // println!("{}\n{}", rm_symbol(&ans), rm_symbol(&uoq.0)); // title diff
+            if rm_symbol(&ans) == rm_symbol(&uoq.0) {
                 let collect = get_node_value(
                     &siken_tab
                         .find_element_by_xpath(&siken_dot_com::Question::Collect.to_string())
@@ -138,21 +170,34 @@ fn get_answers(form_tab: &Arc<Tab>) -> Vec<String> {
         }
 
         if collects.len() != collect_cnt + 1 {
-            println!("Answer is not found. Please search and type an answear.");
-            let mut input = String::new();
+            println!("\nAnswer is not found!\nPlease search in the browser and choise an answear from the following numbers one to four.\nA browser with keywords searched from the question title will open...\n[Title]:\n {}", &uoq.0);
+            webbrowser::open(&Url::GoogleSearch(&uoq.0).to_string());
+
             loop {
+                println!("Please select and enter a number from the following.\nex). 1\n   1. ア\n   2. イ\n   3. ウ\n   4. エ");
+
+                let mut input = String::new();
                 io::stdin().read_line(&mut input);
-                match input.trim().to_owned() {
-                    input
-                        if input == Answers::A.to_string()
-                            || input == Answers::I.to_string()
-                            || input == Answers::U.to_string()
-                            || input == Answers::E.to_string() =>
-                    {
+                let num = input.trim().parse::<i32>().unwrap_or(0);
+                match num {
+                    1 => {
+                        type_answear(google_form::Answers::A(i).to_string());
+                        break;
+                    }
+                    2 => {
+                        type_answear(google_form::Answers::I(i).to_string());
+                        break;
+                    }
+                    3 => {
+                        type_answear(google_form::Answers::U(i).to_string());
+                        break;
+                    }
+                    4 => {
+                        type_answear(google_form::Answers::E(i).to_string());
                         break;
                     }
                     _ => {
-                        println!("You've typed an answer that is not in the options.\nPleaase type answer here again")
+                        println!("You've typed an answer that is not in the options.\nPleaase type answer here again");
                     }
                 }
             }
@@ -163,20 +208,17 @@ fn get_answers(form_tab: &Arc<Tab>) -> Vec<String> {
 
 fn rm_symbol(ans: &str) -> String {
     let mut answer = ans.to_owned();
-    answer.retain(|c| !r#"(),、，？?。・ .;:"#.contains(c));
+    answer.retain(|c| !r#"()ーも用有、，,？?。・ .;:"#.contains(c));
     answer
 }
 
 #[allow(unused_must_use)]
-fn find_website_links(url: &str) -> Vec<String> {
-    let browser = Browser::default().unwrap();
-    let browser_tab = browser.wait_for_initial_tab().unwrap();
-
-    browser_tab.navigate_to(url);
-    browser_tab.wait_until_navigated();
+fn find_website_links(url: &str, search_tab: &Arc<headless_chrome::Tab>) -> Vec<String> {
+    search_tab.navigate_to(url);
+    search_tab.wait_until_navigated();
 
     let rx = Regex::new(r#"^https?://(|www)\...-siken\.com.*$"#).unwrap();
-    let els = browser_tab.find_elements("a").unwrap();
+    let els = search_tab.find_elements("a").unwrap();
     let attrs = els.iter().map(|x| x.get_attributes().unwrap().unwrap());
     let mut urls = vec![];
     attrs.for_each(|url| {
@@ -190,8 +232,9 @@ fn find_website_links(url: &str) -> Vec<String> {
 }
 
 #[allow(unused_must_use)]
-fn get_questions(form_tab: &Arc<Tab>) -> Vec<String> {
-    form_tab
+fn get_questions() -> Vec<String> {
+    TAB.get()
+        .unwrap()
         .find_elements_by_xpath(google_form::QUESTIONS)
         .unwrap()
         .iter()
@@ -200,11 +243,9 @@ fn get_questions(form_tab: &Arc<Tab>) -> Vec<String> {
 }
 
 fn get_node_value(el: &Element) -> String {
-    let node_value = el.get_description().unwrap().children.unwrap()[0]
+    el.get_description().unwrap().children.unwrap()[0]
         .node_value
-        .to_owned();
-    println!("{:#?}", node_value);
-    node_value
+        .to_owned()
 }
 
 mod xpath {
@@ -223,7 +264,7 @@ mod xpath {
                     "{}",
                     match *self {
                         Self::Answer =>
-                            r#"//*[@id="mainCol"]/div[2]/div[2] | //*[@id="mainCol"]/div[2]/section | //*[@id="mainCol"]/div[2]/p[1]"#,
+                            r#"//*[@id="mainCol"]/div[2]/div[2] | //*[@id="mainCol"]/div[2]/section | //*[@id="mainCol"]/div[2]/p[1] | //*[@id="mainCol"]/div[2]/article"#,
                         Self::Collect => r#"//*[@id="answerChar"]"#,
                     }
                 )
