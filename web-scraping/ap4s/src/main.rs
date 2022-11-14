@@ -1,55 +1,94 @@
+use std::process::exit;
 use std::time;
 use std::{
     fmt::{self},
-    io,
     sync::Arc,
 };
 
 use headless_chrome::LaunchOptions;
-use headless_chrome::{protocol::cdp::Page::CaptureScreenshotFormatOption::Png, Browser, Element};
+use headless_chrome::{Browser, Element};
 use once_cell::sync::OnceCell;
 use regex::Regex;
+use text_io::read;
 use urlencoding::encode;
 
 use crate::xpath::{google_form, siken_dot_com};
 
+// Crowling mode
+static HEADLESS: bool = true;
 static TAB: OnceCell<Arc<headless_chrome::Tab>> = OnceCell::new();
 
 #[allow(unused_must_use)]
 fn main() {
-    let class_id = String::from("IH14A219");
-    let id = String::from("90223");
-    let name = String::from("浜田知季");
-    let form_url = r#"https://docs.google.com/forms/d/e/1FAIpQLScRkNwFH-sXyyPK-pYyP8pfCpXo5-I1JyNzB0wo1F_9RXUoJQ/viewform"#;
+    println!("Pleaase type url here ↓");
 
+    // Google form url
+    let form_url: String = read!(); // test_url https://docs.google.com/forms/d/e/1FAIpQLScRkNwFH-sXyyPK-pYyP8pfCpXo5-I1JyNzB0wo1F_9RXUoJQ/viewform
+
+    // Student infomation
+    let class_id = String::from("IH14A219");
+    let id = String::from("90000");
+    let name = String::from("null po");
+
+    // setup headless chrome
     let option = LaunchOptions {
-        headless: true,
+        headless: HEADLESS,
         idle_browser_timeout: time::Duration::from_secs(200),
         ..Default::default()
     };
     let browser = Browser::new(option).unwrap();
     TAB.set(browser.wait_for_initial_tab().unwrap());
 
-    println!("Now crawling...");
+    println!("\nNow crawling...");
 
     // navigate to the google form website.
-    TAB.get().unwrap().navigate_to(form_url);
+    TAB.get().unwrap().navigate_to(&form_url);
     TAB.get().unwrap().wait_until_navigated();
 
     // type the student infomation.
     type_student_info(&Student { class_id, id, name });
 
     // type the collects.
-    type_answers();
+    let answers = type_answers();
+    println!("-- Result --");
+    for (i, ans) in (0_i32..).zip(answers.iter()) {
+        println!("{}. {}", i + 1, ans,);
+    }
 
     // submit
-    TAB.get()
-        .unwrap()
-        .find_element_by_xpath(google_form::SUBMIT)
-        .unwrap()
-        .click();
+    submit();
 
     println!("...Done");
+    exit(1);
+}
+
+#[allow(unused_must_use)]
+fn submit() {
+    if HEADLESS {
+        loop {
+            print!("\nDo you want to submit? [Y/n] ");
+            let input: String = read!();
+            let option = input.trim().to_uppercase();
+            match &*option {
+                "Y" => {
+                    click_element(google_form::SUBMIT.to_owned());
+                    println!("\nSubmited answears!");
+                    break;
+                }
+                "N" => {
+                    println!("\nDid'nt submit answers.");
+                    break;
+                }
+                _ => {
+                    println!("Pleaase type 'Y' or 'n' here again.\n You've typed an option that is not in the options.");
+                }
+            }
+        }
+    } else {
+        println!("\n-- Please go to Google form and press the execute button! --");
+        println!("\nAfter submiting, enter and quite.");
+        let _: String = read!();
+    }
 }
 
 #[allow(unused_must_use)]
@@ -62,39 +101,43 @@ fn type_student_info(student: &Student) {
             .type_into(stu_info);
     };
     type_an_student_info(&student.class_id, google_form::Student::ClassId.to_string());
-    type_an_student_info(&student.id, google_form::Student::ClassId.to_string());
-    type_an_student_info(&student.name, google_form::Student::ClassId.to_string());
+    type_an_student_info(&student.id, google_form::Student::Id.to_string());
+    type_an_student_info(&student.name, google_form::Student::Name.to_string());
 }
 
 #[allow(unused_must_use)]
-fn type_answers() {
+fn type_answers() -> Vec<String> {
     let answers = get_answers();
     for (i, ans) in (0_i32..).zip(answers.iter()) {
         match ans.to_owned() {
             ans if ans == Answers::A.to_string() => {
-                type_an_answer(google_form::Answers::A(i).to_string())
+                click_element(google_form::Answers::A(i).to_string());
             }
+
             ans if ans == Answers::I.to_string() => {
-                type_an_answer(google_form::Answers::I(i).to_string())
+                click_element(google_form::Answers::I(i).to_string());
             }
+
             ans if ans == Answers::U.to_string() => {
-                type_an_answer(google_form::Answers::U(i).to_string())
+                click_element(google_form::Answers::U(i).to_string());
             }
+
             ans if ans == Answers::E.to_string() => {
-                type_an_answer(google_form::Answers::E(i).to_string())
+                click_element(google_form::Answers::E(i).to_string());
             }
-            _ => (),
+            _ => {}
         }
     }
+    answers
 }
 
 #[allow(unused_must_use)]
-fn type_an_answer(ans_xpath: String) {
-    TAB.get()
-        .unwrap()
-        .find_element_by_xpath(&ans_xpath)
-        .unwrap()
-        .click();
+fn click_element(xpath: String) {
+    let element = TAB.get().unwrap().find_element_by_xpath(&xpath).unwrap();
+    if !HEADLESS {
+        element.scroll_into_view();
+    }
+    element.click();
 }
 
 #[allow(unused_must_use)]
@@ -128,7 +171,7 @@ fn get_answers() -> Vec<String> {
                     .find_element_by_xpath(&siken_dot_com::Question::Answer.to_string())
                     .unwrap(),
             );
-            // println!("{}\n{}", rm_symbol(&ans), rm_symbol(&uoq.0)); // title diff
+            // println!("{}\n{}", rm_symbol(&ans), rm_symbol(&uoq.0)); // ans diff
             if rm_symbol(&ans) == rm_symbol(&uoq.0) {
                 let collect = get_node_value(
                     &siken_tab
@@ -142,34 +185,33 @@ fn get_answers() -> Vec<String> {
         }
 
         if collects.len() != collect_cnt + 1 {
-            println!("\nAnswer is not found!\nPlease search in the browser and choise an answear from the following numbers one to four.\nA browser with keywords searched from the question title will open...\n[Title]:\n {}", &uoq.0);
+            println!("\n-- Answer is not found! --\nPlease search in the browser and choise an answear from the following numbers one to four.\nA browser with keywords searched from the question title will open...\n\n[Title]: {}", &uoq.0);
             webbrowser::open(&Url::GoogleSearch(&uoq.0).to_string());
 
             loop {
                 println!("Please select and enter a number from the following.\nex). 1\n   1. ア\n   2. イ\n   3. ウ\n   4. エ");
 
-                let mut input = String::new();
-                io::stdin().read_line(&mut input);
+                let input: String = read!();
                 let num = input.trim().parse::<i32>().unwrap_or(0);
                 match num {
                     1 => {
-                        type_an_answer(google_form::Answers::A(i).to_string());
+                        click_element(google_form::Answers::A(i).to_string());
                         break;
                     }
                     2 => {
-                        type_an_answer(google_form::Answers::I(i).to_string());
+                        click_element(google_form::Answers::I(i).to_string());
                         break;
                     }
                     3 => {
-                        type_an_answer(google_form::Answers::U(i).to_string());
+                        click_element(google_form::Answers::U(i).to_string());
                         break;
                     }
                     4 => {
-                        type_an_answer(google_form::Answers::E(i).to_string());
+                        click_element(google_form::Answers::E(i).to_string());
                         break;
                     }
                     _ => {
-                        println!("You've typed an answer that is not in the options.\nPleaase type answer here again");
+                        println!("Please type '1' to '4' here again.\n You've typed an answer that is not in the options.");
                     }
                 }
             }
@@ -180,7 +222,7 @@ fn get_answers() -> Vec<String> {
 
 fn rm_symbol(ans: &str) -> String {
     let mut answer = ans.to_owned();
-    answer.retain(|c| !r#"()ーも用有はて、，,？?。・ .;:"#.contains(c));
+    answer.retain(|c| !r#"()ーも有用はて、，,？?。・ .;:"#.contains(c));
     answer
 }
 
@@ -262,9 +304,9 @@ mod xpath {
                     f,
                     r#"//*[@id="mG61Hd"]/div[2]/div/div[2]/div[{}]/div/div/div[2]/div/div[1]/div/div[1]/input"#,
                     match &self {
-                        Self::Id => 3,
-                        Self::Name => 2,
                         Self::ClassId => 1,
+                        Self::Id => 2,
+                        Self::Name => 3,
                     }
                 )
             }
