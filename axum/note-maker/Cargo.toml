@@ -1,0 +1,19 @@
+[package]
+name = "note-maker"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[http]
+proxy = "http://proxy01.osaka.hal.ac.jp:80"
+check-revoke = false # SSL証明書の失効を確認しない
+
+[dependencies]
+axum = "0.4"
+askama = "0.11.1"
+serde = "1.0.149"
+csv = "1.1"
+tokio = { version = "1.0", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version="0.3", features = ["env-filter"] }
