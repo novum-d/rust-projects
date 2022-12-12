@@ -5,7 +5,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use csv::WriterBuilder;
+use csv::{ReaderBuilder, WriterBuilder};
 use serde::{Deserialize, Serialize};
 use std::fs::{File, OpenOptions};
 use std::{error::Error, process};
@@ -14,7 +14,14 @@ use std::{io::ErrorKind, net::SocketAddr};
 #[tokio::main]
 async fn main() {
     let app = Router::new()
-        .route("/", get(|| handler(&Note { title: "Note" })))
+        .route("/", get(|| handler(&Note { title: "IS41" })))
+        .route(
+            "/note",
+            get(|| {
+                let memo_list = read("note.csv").unwrap();
+                handler(&Memo { memo_list })
+            }),
+        )
         .route(
             "/",
             post(|form: Form<SignUp>| {
@@ -67,8 +74,24 @@ fn write(file: File, sign_up: SignUp) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn read(path: &str) -> Result<Vec<SignUp>, Box<dyn Error>> {
+    let mut r = ReaderBuilder::new().has_headers(false).from_path(path)?;
+    let dc = r.deserialize::<SignUp>();
+    let mut memo_list = Vec::new();
+    for d in dc {
+        let memo = match d {
+            Ok(m) => m,
+            Err(e) => {
+                panic!("Error: {}", e);
+            }
+        };
+        memo_list.push(memo)
+    }
+    Ok(memo_list)
+}
+
 #[derive(Template)]
-#[template(path = "note.html")]
+#[template(path = "sign_up.html")]
 struct Note<'a> {
     title: &'a str,
 }
@@ -77,4 +100,10 @@ struct Note<'a> {
 struct SignUp {
     title: String,
     detail: String,
+}
+
+#[derive(Template)]
+#[template(path = "memo.html")]
+struct Memo {
+    memo_list: Vec<SignUp>,
 }

@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [http]
-proxy = "http://proxy01.osaka.hal.ac.jp:80"
-check-revoke = false # SSL証明書の失効を確認しない
+# proxy = "http://proxy01.osaka.hal.ac.jp:80"
+# check-revoke = false # SSL証明書の失効を確認しない
 
 [dependencies]
 axum = "0.4"

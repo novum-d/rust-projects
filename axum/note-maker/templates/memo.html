@@ -1,0 +1,26 @@
+
+{% extends "base.html" %}
+
+{% block title %}{{"Memo"}}{% endblock %}
+
+{% block head %}
+<style>
+    .container-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 80vh;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-center">
+    <h1>Users</h1>
+    <ul>
+        {% for memo in memo_list %}
+        <li>{{memo.title}}: {{memo.detail}}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
