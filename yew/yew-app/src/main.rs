@@ -5,6 +5,8 @@ use yew::prelude::*;
 
 use crate::web_site_test::tutorial::{Video, VideoDetails, VideosList};
 
+#[allow(clippy::redundant_clone)]
+#[allow(clippy::redundant_closure)]
 #[function_component(App)]
 fn app() -> Html {
     let videos = use_state(|| vec![]);
