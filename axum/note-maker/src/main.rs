@@ -18,7 +18,7 @@ async fn main() {
         .route(
             "/note",
             get(|| {
-                let memo_list = read("note.csv").unwrap();
+                let memo_list = &read("note.csv").unwrap();
                 handler(&Memo { memo_list })
             }),
         )
@@ -87,6 +87,7 @@ fn read(path: &str) -> Result<Vec<SignUp>, Box<dyn Error>> {
         };
         memo_list.push(memo)
     }
+    drop(r);
     Ok(memo_list)
 }
 
