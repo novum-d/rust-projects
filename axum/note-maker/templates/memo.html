@@ -3,24 +3,18 @@
 
 {% block title %}{{"Memo"}}{% endblock %}
 
-{% block head %}
-<style>
-    .container-center {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 80vh;
-    }
-</style>
-{% endblock %}
 
 {% block content %}
 <div class="container-center">
-    <h1>Users</h1>
-    <ul>
+    <div>
+        <p class="text-4xl text-gray-900 mb-3">メモ帳</p>
         {% for memo in memo_list %}
-        <li>{{memo.title}}: {{memo.detail}}</li>
-        {% endfor %}
-    </ul>
+        <div href="#"
+            class="block mb-3 min-w-max p-3 bg-white border border-gray-200 rounded-lg shadow-md hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
+            <h5 class="mb-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{memo.title}}</h5>
+            <p class="font-normal text-gray-700 dark:text-gray-400">{{memo.detail}}</p>
+        </div>
+    {% endfor %}
+    </div>
 </div>
 {% endblock %}

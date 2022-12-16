@@ -14,20 +14,33 @@ use std::{io::ErrorKind, net::SocketAddr};
 #[tokio::main]
 async fn main() {
     let app = Router::new()
-        .route("/", get(|| handler(&Note { title: "IS41" })))
+        .route("/", get(|| handler(&PageTemplate { title: "IS41" })))
         .route(
             "/note",
-            get(|| {
-                let memo_list = &read("note.csv").unwrap();
-                handler(&Memo { memo_list })
+            get(|| async {
+                let list = read("note.csv").unwrap();
+                let mut memo_list = Vec::new();
+                for x in list.iter() {
+                    memo_list.push(MemoTemplate {
+                        title: &x.title,
+                        detail: &x.detail,
+                    });
+                }
+                let html = MemoListTemplate {
+                    memo_list: &memo_list,
+                }
+                .render()
+                .unwrap();
+
+                Html(html).into_response()
             }),
         )
         .route(
             "/",
-            post(|form: Form<SignUp>| {
+            post(|form: Form<Memo>| {
                 let sign_up = form.0;
                 save_on_file(sign_up);
-                handler(&Note { title: "Sign up!" })
+                handler(&PageTemplate { title: "Sign up!" })
             }),
         );
 
@@ -43,7 +56,7 @@ async fn handler<T: Template>(template: &T) -> impl IntoResponse {
     Html(html).into_response()
 }
 
-fn save_on_file(sign_up: SignUp) {
+fn save_on_file(sign_up: Memo) {
     let path = "note.csv";
     let f = OpenOptions::new().append(true).open(path);
     let f = match f {
@@ -67,16 +80,16 @@ fn save_on_file(sign_up: SignUp) {
     }
 }
 
-fn write(file: File, sign_up: SignUp) -> Result<(), Box<dyn Error>> {
+fn write(file: File, sign_up: Memo) -> Result<(), Box<dyn Error>> {
     let mut wtr = WriterBuilder::new().has_headers(false).from_writer(file);
     wtr.serialize(sign_up)?;
     wtr.flush()?;
     Ok(())
 }
 
-fn read(path: &str) -> Result<Vec<SignUp>, Box<dyn Error>> {
+fn read(path: &str) -> Result<Vec<Memo>, Box<dyn Error>> {
     let mut r = ReaderBuilder::new().has_headers(false).from_path(path)?;
-    let dc = r.deserialize::<SignUp>();
+    let dc = r.deserialize::<Memo>();
     let mut memo_list = Vec::new();
     for d in dc {
         let memo = match d {
@@ -93,18 +106,23 @@ fn read(path: &str) -> Result<Vec<SignUp>, Box<dyn Error>> {
 
 #[derive(Template)]
 #[template(path = "sign_up.html")]
-struct Note<'a> {
+struct PageTemplate<'a> {
     title: &'a str,
 }
 
 #[derive(Serialize, Deserialize)]
-struct SignUp {
+struct Memo {
     title: String,
     detail: String,
 }
 
 #[derive(Template)]
 #[template(path = "memo.html")]
-struct Memo {
-    memo_list: Vec<SignUp>,
+struct MemoListTemplate<'a> {
+    memo_list: &'a Vec<MemoTemplate<'a>>,
+}
+
+struct MemoTemplate<'a> {
+    title: &'a str,
+    detail: &'a str,
 }

@@ -5,7 +5,17 @@
     <title>{% block title %}{{ title }} - My Site{% endblock %}</title>
     <link rel="stylesheet" href="https://unpkg.com/modern-css-reset/dist/reset.min.css" />
     <script src="https://cdn.tailwindcss.com"></script>
-    {% block head %}{% endblock %}
+    <style>
+        body {
+            background-color: antiquewhite;
+        }
+        .container-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+        }
+    </style>
 </head>
 
 <body>
