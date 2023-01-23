@@ -1,6 +1,9 @@
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }
+pub fn add_two(a: i32) -> i32 {
+    a + 2
+}
 
 #[derive(Debug)]
 struct Rectangle {
@@ -14,6 +17,35 @@ impl Rectangle {
     }
 }
 
+pub fn greeting(name: &str) -> String {
+    // String::from("Hello")
+    format!("Hello, {}", name)
+}
+
+pub struct Guess {
+    value: i32,
+}
+
+impl Guess {
+    pub fn new(value: i32) -> Guess {
+        if value < 1 {
+            panic!(
+                //予想値は1以上でなければなりませんが、{}でした。
+                "Guess value must be greater than or equal to 1, got {}.",
+                value
+            );
+        } else if value > 100 {
+            panic!(
+                //予想値は100以下でなければなりませんが、{}でした。
+                "Guess value must be less than or equal to 100, got {}.",
+                value
+            );
+        }
+
+        Guess { value }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -22,6 +54,11 @@ mod tests {
     fn it_works() {
         let result = add(2, 2);
         assert_eq!(result, 4);
+    }
+
+    #[test]
+    fn it_adds_two_() {
+        assert_eq!(4, add_two(2))
     }
 
     #[test]
@@ -40,5 +77,21 @@ mod tests {
             height: 1,
         };
         assert!(lager.can_hold(&smaller));
+    }
+
+    #[test]
+    fn greeting_contains_name() {
+        let result = greeting("Carol");
+        assert!(
+            result.contains("Carol"),
+            "Greeting did not contain name, value was `{}`",
+            result
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Guess value must be less than or equal to 100")]
+    fn greater_than_100() {
+        Guess::new(200);
     }
 }
