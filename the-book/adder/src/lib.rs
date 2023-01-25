@@ -126,4 +126,11 @@ mod tests {
     fn one_hundred() {
         assert_eq!(102, add_two(100));
     }
+
+    #[test]
+    #[ignore]
+    fn expensive_test() {
+        // 実行に1時間かかるコード
+        // code that takes an hour to run
+    }
 }
