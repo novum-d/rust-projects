@@ -4,7 +4,25 @@ module.exports = {
         "./index.html",
         "./assets/**/*.css",
     ],
-    theme: {},
+      theme: {
+    extend: {
+      height: {
+        'screen': [
+          '100vh','100dvh'
+        ]
+      },
+      minHeight: {
+        'screen': [
+          '100vh','100dvh'
+        ]
+      },
+      maxHeight: {
+        'screen': [
+          '100vh','100dvh'
+        ]
+      }
+    },
+  },
     variants: {},
     plugins: [],
 };
