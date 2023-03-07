@@ -1,5 +1,5 @@
 #[test]
-fn show_lastname() {
+fn show_last_name() {
     // Don't
     let user_name = "tomoki hamada";
     let mut splits = user_name.split_whitespace();
