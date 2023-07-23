@@ -4,3 +4,9 @@ dist = "dist"
 
 [watch]
 watch = ["src", "assets"]
+
+[[hooks]]
+stage = "pre_build"
+command = "sh"
+command_arguments = ["-c", "npx tailwindcss  -o ./dist/output.css"]
+
