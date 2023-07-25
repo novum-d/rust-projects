@@ -8,5 +8,5 @@ watch = ["src", "assets"]
 [[hooks]]
 stage = "pre_build"
 command = "sh"
-command_arguments = ["-c", "npx tailwindcss  -o ./dist/output.css"]
+command_arguments = ["-c", "npx tailwindcss -i ./assets/css/main.css -o ./dist/output.css"]
 
