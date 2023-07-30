@@ -1,0 +1,6 @@
+type: object
+properties:
+  avatar_url:
+    type: string
+    nullable: false
+    example: "https://images.unsplash.com/photo-1689852484069-3e0fe82cc7c.png"

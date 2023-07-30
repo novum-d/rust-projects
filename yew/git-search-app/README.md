@@ -41,3 +41,14 @@ module.exports = {
   plugins: [require("daisyui")],
 }
 ```
+
+### Trunk
+```
+cargo install --locked trunk
+cargo install --locked wasm-bindgen-cli
+```
+
+### Open API
+```
+npm i -D @openapitools/openapi-generator-cli
+```

@@ -1,0 +1,14 @@
+get:
+  parameters:
+     - in: query
+       name: q
+       schema:
+         type: string
+       description: keyword
+  responses:
+    '200':
+      description: the user being returned
+      content:
+        application/vnd.github.v3+json:
+          schema:
+            $ref: ../schemas/responses/repos.yml

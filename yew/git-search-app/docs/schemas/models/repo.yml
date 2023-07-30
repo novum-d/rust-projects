@@ -1,0 +1,34 @@
+type: object
+properties:
+  full_name:
+    type: string
+    nullable: false
+    example: "novum-d"
+  owner:
+    type: object
+    nullable: false
+    $ref:
+  language:
+    type: string
+    nullable: false
+    example: "rust"
+  stargazers_count:
+    type: integer
+    nullable: false
+    format: int64
+    example: "名称"
+  watchers_count:
+    type: integer
+    nullable: false
+    format: int64
+    example: "名称"
+  forks_count:
+    type: integer
+    nullable: false
+    format: int64
+    example: "名称"
+  open_issues_count:
+    type: integer
+    nullable: false
+    format: int64
+    example: "名称"

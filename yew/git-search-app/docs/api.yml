@@ -1,0 +1,23 @@
+openapi: 3.0.0
+info:
+  title: Github API
+  version: "1.0.0"
+servers:
+  - url: https://api.github.com
+    description: Github API
+    variables:
+      api_versions:
+        default: v1
+        enum:
+          - v1
+paths:
+  /search/repositories:
+    $ref: paths/index.yml
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+security:
+  - bearerAuth: []  
+
