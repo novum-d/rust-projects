@@ -13,11 +13,3 @@ servers:
 paths:
   /search/repositories:
     $ref: paths/index.yml
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-security:
-  - bearerAuth: []  
-

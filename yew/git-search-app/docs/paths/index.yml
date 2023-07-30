@@ -9,6 +9,6 @@ get:
     '200':
       description: the user being returned
       content:
-        application/vnd.github.v3+json:
+        application/json:
           schema:
             $ref: ../schemas/responses/repos.yml
