@@ -13,3 +13,10 @@ servers:
 paths:
   /search/repositories:
     $ref: paths/index.yml
+
+components:
+  schemas:
+    repos:
+      properties:
+        items: 
+          $ref: schemas/responses/repos.yml

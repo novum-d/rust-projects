@@ -8,5 +8,5 @@ watch = ["src", "static"]
 [[hooks]]
 stage = "pre_build"
 command = "sh"
-command_arguments = ["-c", "npx tailwindcss -i static/assets/css/main.css -o dist/main.css && openapi-generator-cli generate -g rust-server -i docs/api.yaml -o ../path/to/output"]
+command_arguments = ["-c", "npx tailwindcss -i static/assets/css/main.css -o dist/main.css"]
 

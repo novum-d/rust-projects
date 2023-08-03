@@ -1,7 +1,5 @@
-use openapi::apis::{
-    configuration::{self, Configuration},
-    default_api::search_repositories_get,
-};
+use gloo::console::log;
+use openapi::apis::{configuration::Configuration, default_api::search_repositories_get};
 use yew::{html, Component, Context, Html};
 
 pub struct App {
@@ -22,12 +20,7 @@ impl Component for App {
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::AddOne => {
-                let config = Configuration::new();
-                let q = Some("");
-                search_repositories_get(&config, q).await.unwrap();
-                self.value += 1
-            }
+            Msg::AddOne => self.value += 1,
         }
         true
     }
@@ -37,6 +30,21 @@ impl Component for App {
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
+        {
+            wasm_bindgen_futures::spawn_local(async move {
+                let config = Configuration::new();
+                let q = Some("android");
+                let result = search_repositories_get(&config, q).await;
+                match result {
+                    Ok(i) => {
+                        log::info!("Update: {:#?}", i);
+                    }
+                    Err(e) => {
+                        log::info!("Update: {:#?}", e);
+                    }
+                }
+            })
+        }
         html! {
             <>
                 <header>

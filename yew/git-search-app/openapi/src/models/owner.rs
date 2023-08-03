@@ -12,15 +12,15 @@
 
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
-pub struct Repos {
-    #[serde(rename = "items", skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<crate::models::Repo>>,
+pub struct Owner {
+    #[serde(rename = "avatar_url", skip_serializing_if = "Option::is_none")]
+    pub avatar_url: Option<String>,
 }
 
-impl Repos {
-    pub fn new() -> Repos {
-        Repos {
-            items: None,
+impl Owner {
+    pub fn new() -> Owner {
+        Owner {
+            avatar_url: None,
         }
     }
 }

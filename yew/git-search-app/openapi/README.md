@@ -30,6 +30,7 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [Owner](docs/Owner.md)
  - [Repo](docs/Repo.md)
  - [Repos](docs/Repos.md)
 

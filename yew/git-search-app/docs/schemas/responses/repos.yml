@@ -1,6 +1,3 @@
-type: object
-properties:
-  samples:
-    type: array
-    items:
-      $ref: ../models/repo.yml
+type: array
+items:
+  $ref: ../models/repo.yml

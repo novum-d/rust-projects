@@ -5,9 +5,7 @@ properties:
     nullable: false
     example: "novum-d"
   owner:
-    type: object
-    nullable: false
-    $ref:
+    $ref: owner.yml
   language:
     type: string
     nullable: false
@@ -16,19 +14,19 @@ properties:
     type: integer
     nullable: false
     format: int64
-    example: "名称"
+    example: 0 
   watchers_count:
     type: integer
     nullable: false
     format: int64
-    example: "名称"
+    example: 0
   forks_count:
     type: integer
     nullable: false
     format: int64
-    example: "名称"
+    example: 0 
   open_issues_count:
     type: integer
     nullable: false
     format: int64
-    example: "名称"
+    example: 0 

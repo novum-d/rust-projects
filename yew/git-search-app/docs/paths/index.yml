@@ -2,13 +2,16 @@ get:
   parameters:
      - in: query
        name: q
+       description: keyword
        schema:
          type: string
-       description: keyword
   responses:
     '200':
-      description: the user being returned
+      description: A list of repositories
       content:
         application/json:
           schema:
-            $ref: ../schemas/responses/repos.yml
+            repos:
+              properties:
+                items: 
+                  $ref: schemas/responses/repos.yml

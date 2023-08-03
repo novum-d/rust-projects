@@ -5,7 +5,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **full_name** | Option<**String**> |  | [optional]
-**owner** | Option<[**serde_json::Value**](.md)> |  | [optional]
+**owner** | Option<[**crate::models::Owner**](owner.md)> |  | [optional]
 **language** | Option<**String**> |  | [optional]
 **stargazers_count** | Option<**i64**> |  | [optional]
 **watchers_count** | Option<**i64**> |  | [optional]

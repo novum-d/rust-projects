@@ -16,7 +16,7 @@ pub struct Repo {
     #[serde(rename = "full_name", skip_serializing_if = "Option::is_none")]
     pub full_name: Option<String>,
     #[serde(rename = "owner", skip_serializing_if = "Option::is_none")]
-    pub owner: Option<serde_json::Value>,
+    pub owner: Option<Box<crate::models::Owner>>,
     #[serde(rename = "language", skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
     #[serde(rename = "stargazers_count", skip_serializing_if = "Option::is_none")]
