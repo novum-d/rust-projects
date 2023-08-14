@@ -4,7 +4,7 @@ use openapi::models::Repo;
 use state::{FetchState, State};
 use web_sys::{HtmlInputElement, KeyboardEvent};
 use yew::html::Scope;
-use yew::{html, Component, Context, Html, TargetCast};
+use yew::{classes, html, Component, Context, Html, TargetCast};
 
 mod state;
 
@@ -97,18 +97,21 @@ impl Component for App {
 }
 
 impl App {
-    fn view_entry(&self, link: &Scope<Self>) -> Html {
+    fn view_entry(&self, _link: &Scope<Self>) -> Html {
         match &self.state.entries {
             FetchState::NotFetching => html! {"Yet"},
             FetchState::Fetching => html! { "Fetching" },
             FetchState::Success(repos) => {
+                let lastIndex = repos.len() - 1;
                 html! {
-                   for repos.iter().map( |repo| {
+                   for repos.iter().enumerate().map( |(i,repo)| {
                      let default = "".to_string();
                      let full_name = repo.full_name.as_ref().unwrap_or(&default);
                      let url = repo.owner.as_ref().and_then(|owner| owner.avatar_url.as_ref()).unwrap_or(&default);
+                        let marginBottom = if i == lastIndex{ None }else{ Some("mb-10")};
+                     let classes = classes!(Some("card card-side bg-base-100 shadow-xl"), marginBottom);
                      html! {
-                         <div class="card card-side bg-base-100 shadow-xl">
+                         <div class={classes}>
                              <figure class="basis-3/12 avatar"><img class="object-cover" src={url.clone()} alt="Movie" /></figure>
                              <div class="card-body basis-8/12">
                                  <h2 class="card-title">{full_name}</h2>
