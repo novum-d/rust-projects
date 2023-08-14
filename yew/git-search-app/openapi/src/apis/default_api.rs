@@ -11,19 +11,19 @@
 use reqwest;
 
 use super::{configuration, Error};
-use crate::apis::ResponseContent;
+use crate::{apis::ResponseContent, models::Repos};
 
 /// struct for typed errors of method [`search_repositories_get`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum SearchRepositoriesGetError {
-    UnknownValue(serde_json::Value),
+    UnknownValue(Repos),
 }
 
 pub async fn search_repositories_get(
     configuration: &configuration::Configuration,
     q: Option<&str>,
-) -> Result<serde_json::Value, Error<SearchRepositoriesGetError>> {
+) -> Result<Repos, Error<SearchRepositoriesGetError>> {
     let local_var_configuration = configuration;
 
     let local_var_client = &local_var_configuration.client;
@@ -47,10 +47,9 @@ pub async fn search_repositories_get(
     let local_var_content = local_var_resp.text().await?;
 
     if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-        println!("hogehgoe");
-        serde_json::from_str(&local_var_content).map_err(Error::from)
+        let repos: Repos = serde_json::from_str(&local_var_content).unwrap();
+        Ok(repos)
     } else {
-        println!("-=--------------------");
         let local_var_entity: Option<SearchRepositoriesGetError> =
             serde_json::from_str(&local_var_content).ok();
         let local_var_error = ResponseContent {

@@ -1,10 +1,15 @@
+use openapi::apis::Error;
+use openapi::{apis::default_api::SearchRepositoriesGetError, models::Repo};
 use serde_derive::{Deserialize, Serialize};
-use strum_macros::{Display, EnumIter};
-use yew::prelude::*;
 
-#[derive(Debug, Serialize, Deserialize)]
 pub struct State {
-    pub entries: Vec<Entry>,
-    pub filter: Filter,
-    pub edit_value: String,
+    pub entries: FetchState<Vec<Repo>>,
+    pub keyword: String,
+}
+
+pub enum FetchState<T> {
+    NotFetching,
+    Fetching,
+    Success(T),
+    Failed(Error<SearchRepositoriesGetError>),
 }

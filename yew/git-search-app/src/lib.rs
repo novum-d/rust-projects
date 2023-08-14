@@ -1,13 +1,27 @@
-use gloo::console::log;
-use openapi::apis::{configuration::Configuration, default_api::search_repositories_get};
-use yew::{html, Component, Context, Html};
+use openapi::apis::default_api::SearchRepositoriesGetError;
+use openapi::apis::{configuration::Configuration, default_api::search_repositories_get, Error};
+use openapi::models::Repo;
+use state::{FetchState, State};
+use web_sys::{HtmlInputElement, KeyboardEvent};
+use yew::html::Scope;
+use yew::{html, Component, Context, Html, TargetCast};
+
+mod state;
 
 pub struct App {
-    value: i64,
+    state: state::State,
 }
 
 pub enum Msg {
-    AddOne,
+    SetReposFetchState(FetchState<Vec<Repo>>),
+    Search(String),
+}
+
+async fn fetch_repos(keyword: &str) -> Result<Vec<Repo>, Error<SearchRepositoriesGetError>> {
+    let config = Configuration::default();
+    let q = Some(keyword.trim());
+    let search_result = search_repositories_get(&config, q).await?;
+    Ok(search_result.items.unwrap())
 }
 
 impl Component for App {
@@ -15,36 +29,41 @@ impl Component for App {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Self { value: 0 }
+        let state = State {
+            entries: FetchState::NotFetching,
+            keyword: "".into(),
+        };
+        Self { state }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::AddOne => self.value += 1,
+            Msg::SetReposFetchState(fetch_state) => {
+                self.state.entries = fetch_state;
+                true
+            }
+            Msg::Search(keyword) => {
+                ctx.link().send_future(async move {
+                    match fetch_repos(&keyword).await {
+                        Ok(repos) => Msg::SetReposFetchState(FetchState::Success(repos)),
+                        Err(err) => {
+                            log::info!("{err}");
+                            Msg::SetReposFetchState(FetchState::Failed(err))
+                        }
+                    }
+                });
+                ctx.link()
+                    .send_message(Msg::SetReposFetchState(FetchState::Fetching));
+                false
+            }
         }
-        true
     }
 
     fn changed(&mut self, _ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
         false
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
-        {
-            wasm_bindgen_futures::spawn_local(async move {
-                let config = Configuration::new();
-                let q = Some("android");
-                let result = search_repositories_get(&config, q).await;
-                match result {
-                    Ok(i) => {
-                        log::info!("Update: {:#?}", i);
-                    }
-                    Err(e) => {
-                        log::info!("Update: {:#?}", e);
-                    }
-                }
-            })
-        }
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <>
                 <header>
@@ -69,32 +88,61 @@ impl Component for App {
                     </nav>
                 </header>
                 <main class="mx-96 mt-24">
-                    <div class="form-control px-36 mb-10">
-                        <div class="input-group flex">
-                            <input type="text" placeholder="Search…" class="input input-bordered flex-grow" />
-                            <button class="btn btn-square">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card card-side bg-base-100 shadow-xl">
-                        <figure class="basis-1/5"><img class="object-center" src="https://images.unsplash.com/photo-1562166437-24ebf08f28be?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1480&q=80" alt="Movie" /></figure>
-                        <div class="card-body basis-4/5">
-                            <h2 class="card-title">{"New movie is released!"}</h2>
-                            <p>{"Click the button to watch on Jetflix app."}</p>
-                            <div class="card-actions justify-end">
-                                <button class="btn btn-primary">{"Watch"}</button>
-                            </div>
-                        </div>
-                    </div>
+                    { self.view_entry_edit_input(&self.state.keyword,ctx.link()) }
+                    { self.view_entry(ctx.link()) }
                 </main>
             </>
         }
-        // <button onclick={ctx.link().callback(|_| Msg::AddOne)}>{ "+1" }</button>
-        // <p>{ self.value }</p>
-        // <button class="btn">{"button"}</button>
+    }
+}
+
+impl App {
+    fn view_entry(&self, link: &Scope<Self>) -> Html {
+        match &self.state.entries {
+            FetchState::NotFetching => html! {"Yet"},
+            FetchState::Fetching => html! { "Fetching" },
+            FetchState::Success(repos) => {
+                html! {
+                   for repos.iter().map( |repo| {
+                     let default = "".to_string();
+                     let full_name = repo.full_name.as_ref().unwrap_or(&default);
+                     let url = repo.owner.as_ref().and_then(|owner| owner.avatar_url.as_ref()).unwrap_or(&default);
+                     html! {
+                         <div class="card card-side bg-base-100 shadow-xl">
+                             <figure class="basis-3/12 avatar"><img class="object-cover" src={url.clone()} alt="Movie" /></figure>
+                             <div class="card-body basis-8/12">
+                                 <h2 class="card-title">{full_name}</h2>
+                                 <p>{"Click the button to watch on Jetflix app."}</p>
+                                 <div class="card-actions justify-end">
+                                     <button class="btn btn-primary">{"Watch"}</button>
+                                 </div>
+                             </div>
+                         </div>
+                     }
+                   })
+                }
+            }
+            FetchState::Failed(err) => html! { err },
+        }
+    }
+
+    fn view_entry_edit_input(&self, keyword: &str, link: &Scope<Self>) -> Html {
+        let search = move |input: HtmlInputElement| Msg::Search(input.value());
+
+        let onkeypress = link.batch_callback(move |e: KeyboardEvent| {
+            (e.key() == "Enter").then(|| search(e.target_unchecked_into()))
+        });
+
+        html! {
+            <div class="form-control px-36 mb-10">
+                 <input
+                     type="text"
+                     placeholder="Search…"
+                     class="input input-bordered flex-grow"
+                     value={self.state.keyword.clone()}
+                     {onkeypress}
+                 />
+            </div>
+        }
     }
 }
