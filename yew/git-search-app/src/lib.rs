@@ -1,23 +1,24 @@
-use std::borrow::Borrow;
-use std::path::Path;
-
 use openapi::apis::default_api::SearchRepositoriesGetError;
 use openapi::apis::{configuration::Configuration, default_api::search_repositories_get, Error};
 use openapi::models::Repo;
-use state::{FetchState, State};
+use state::{FetchState, State, Theme};
 use web_sys::{HtmlInputElement, KeyboardEvent};
 use yew::html::Scope;
-use yew::{classes, html, Component, Context, Html, TargetCast};
+use yew::{
+    classes, function_component, html, use_state, Component, Context, ContextProvider, Html,
+    TargetCast,
+};
 
 mod state;
 
 pub struct App {
-    state: state::State,
+    state: State,
 }
 
 pub enum Msg {
     SetReposFetchState(FetchState<Vec<Repo>>),
     Search(String),
+    ChangeTheme,
 }
 
 async fn fetch_repos(keyword: &str) -> Result<Vec<Repo>, Error<SearchRepositoriesGetError>> {
@@ -35,6 +36,7 @@ impl Component for App {
         let state = State {
             entries: FetchState::NotFetching,
             keyword: "".into(),
+            isLightMode: false,
         };
         Self { state }
     }
@@ -47,6 +49,7 @@ impl Component for App {
             }
             Msg::Search(keyword) => {
                 ctx.link().send_future(async move {
+                    self.state.keyword = keyword;
                     match fetch_repos(&keyword).await {
                         Ok(repos) => Msg::SetReposFetchState(FetchState::Success(repos)),
                         Err(err) => {
@@ -59,6 +62,11 @@ impl Component for App {
                     .send_message(Msg::SetReposFetchState(FetchState::Fetching));
                 false
             }
+            Msg::ChangeTheme => {
+                log::info!("{}", self.state.isLightMode);
+                self.state.isLightMode = !self.state.isLightMode;
+                true
+            }
         }
     }
 
@@ -68,14 +76,44 @@ impl Component for App {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
-        <>
+            <div data-theme={if self.state.isLightMode {"light"} else {"dark"} }>
+                    <main class="mt-16 py-12 flex justify-center">
+                        { self.view_header(ctx.link()) }
+                        <div class="flex flex-col w-[clamp(23ch, 80%, 20ch)]">
+                            { self.view_keyword_input(ctx.link()) }
+                            <div class="grow hidden-scrollbar">
+                                { self.view_repo_list(ctx.link()) }
+                            </div>
+                        </div>
+                    </main>
+            </div>
+        }
+    }
+}
+
+#[function_component]
+pub fn Hoge() -> Html {
+    let ctx = use_state(|| Theme::default());
+    html! {
+            <ContextProvider<Theme> context={(*ctx).clone()}>
+        <div></div>
+            </ContextProvider<Theme>>
+    }
+}
+
+impl App {
+    fn view_header(&self, link: &Scope<Self>) -> Html {
+        html! {
                 <header class="fixed top-0 left-0 right-0 z-max">
                     <nav class="navbar bg-base-100 flex justify-between px-5 drop-shadow-md">
                         <a href="#" class="btn btn-ghost -m-1.5 p-1.5">
                             <img class="h-8 w-auto" src="static/assets/images/github-mark.svg" alt="" />
                             <span class="normal-case text-xl">{"Github Search"}</span>
                         </a>
-                        <label class="swap swap-rotate">
+                        <label
+                            class="swap swap-rotate "
+                            onclick={link.callback(|_| Msg::ChangeTheme)}
+                        >
                             <input type="checkbox" />
                             <svg class="swap-on fill-current w-8 h-8" xmlns="http://www.w3.org/2000/svg" height="48"
                                 viewBox="0 -960 960 960" width="48">
@@ -90,18 +128,9 @@ impl Component for App {
                         </label>
                     </nav>
                 </header>
-                <main class="mt-16 px-96 py-24 flex flex-col">
-                    { self.view_keyword_input(ctx.link()) }
-                    <div class="content-container">
-                        { self.view_repo_list(ctx.link()) }
-                    </div>
-                </main>
-        </>
         }
     }
-}
 
-impl App {
     fn view_keyword_input(&self, link: &Scope<Self>) -> Html {
         let search = move |input: HtmlInputElement| Msg::Search(input.value());
 
@@ -110,11 +139,11 @@ impl App {
         });
 
         html! {
-            <div class="form-control px-36 mb-10">
+            <div class="form-control items-center mb-10">
                  <input
                      type="text"
                      placeholder="Search…"
-                     class="input input-bordered"
+                     class="input input-bordered w-[clamp(23ch, 80%, 46ch)]"
                      value={self.state.keyword.clone()}
                      {onkeypress}
                  />
@@ -126,7 +155,7 @@ impl App {
         match &self.state.entries {
             FetchState::NotFetching => html! { "" },
             FetchState::Fetching => html! {
-            <div class="grid place-content-center">
+            <div class="grid place-content-center h-full">
                 <span class="loading loading-dots loading-lg"></span>
             </div>
             },
@@ -142,20 +171,20 @@ impl App {
 
                         // style
                         let margin_bottom = if i == last_index { None } else { Some("mb-10") };
-                        let classes = classes!(Some("card card-side bg-base-100 shadow-xl"), margin_bottom);
+                        let classes = classes!(Some("card card-side bg-base-100 shadow-xl [&>*]:min-w-0 "), margin_bottom);
                          html! {
                              <div class={classes}>
-                                 <figure class="basis-3/12 avatar"><img class="object-cover" src={avatar_url.clone()} alt="Movie" /></figure>
+                                 <figure class="basis-4/12 avatar"><img src={avatar_url.clone()} alt="Movie" /></figure>
                                  <div class="card-body basis-8/12">
-                                     <h2 class="card-title">{repo.full_name.as_ref()}</h2>
+                                     <h2 class="card-title inline-block text-ellipsis overflow-hidden whitespace-nowrap">{repo.full_name.as_ref()}</h2>
                                      <p>{repo.language.as_ref()}</p>
                                      <div class="card-actions justify-end flex items-center  space-x-4">
                                         <div class="flex space-x-2">
-                                         <svg class="fill-slate-600 h-5 w-5 flex-no-shrink fill-current" xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 -960 960 960" width="48"><path d="m323-205 157-94 157 95-42-178 138-120-182-16-71-168-71 167-182 16 138 120-42 178ZM233-80l65-281L80-550l288-25 112-265 112 265 288 25-218 189 65 281-247-149L233-80Zm247-355Z"/></svg>
+                                         <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 -960 960 960" width="48"><path d="m323-205 157-94 157 95-42-178 138-120-182-16-71-168-71 167-182 16 138 120-42 178ZM233-80l65-281L80-550l288-25 112-265 112 265 288 25-218 189 65 281-247-149L233-80Zm247-355Z"/></svg>
                                          <span>{repo.stargazers_count.as_ref()}</span>
                                         </div>
                                         <div class="flex space-x-2">
-                                         <svg class="fill-slate-600 h-5 w-5 flex-no-shrink fill-current" xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 -960 960 960" width="48"><path d="M372-120v-606l-90 90-42-42 162-162 162 162-42 42-90-90v320q30-33 71.5-54T607-481q16 0 38 3t41 8l-90-90 42-42 162 162-162 162-42-42 90-90q-16-5-38-8t-45-3q-57 0-104.5 34T432-290v170h-60Z"/></svg>
+                                         <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 -960 960 960" width="48"><path d="M372-120v-606l-90 90-42-42 162-162 162 162-42 42-90-90v320q30-33 71.5-54T607-481q16 0 38 3t41 8l-90-90 42-42 162 162-162 162-42-42 90-90q-16-5-38-8t-45-3q-57 0-104.5 34T432-290v170h-60Z"/></svg>
                                          <span>{repo.forks_count.as_ref()}</span>
                                         </div>
                                      </div>
