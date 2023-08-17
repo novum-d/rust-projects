@@ -1,3 +1,6 @@
+use std::borrow::Borrow;
+use std::path::Path;
+
 use openapi::apis::default_api::SearchRepositoriesGetError;
 use openapi::apis::{configuration::Configuration, default_api::search_repositories_get, Error};
 use openapi::models::Repo;
@@ -65,8 +68,8 @@ impl Component for App {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
-            <>
-                <header>
+        <>
+                <header class="fixed top-0 left-0 right-0 z-max">
                     <nav class="navbar bg-base-100 flex justify-between px-5 drop-shadow-md">
                         <a href="#" class="btn btn-ghost -m-1.5 p-1.5">
                             <img class="h-8 w-auto" src="static/assets/images/github-mark.svg" alt="" />
@@ -87,49 +90,19 @@ impl Component for App {
                         </label>
                     </nav>
                 </header>
-                <main class="mx-96 mt-24">
-                    { self.view_entry_edit_input(&self.state.keyword,ctx.link()) }
-                    { self.view_entry(ctx.link()) }
+                <main class="mt-16 px-96 py-24 flex flex-col">
+                    { self.view_keyword_input(ctx.link()) }
+                    <div class="content-container">
+                        { self.view_repo_list(ctx.link()) }
+                    </div>
                 </main>
-            </>
+        </>
         }
     }
 }
 
 impl App {
-    fn view_entry(&self, _link: &Scope<Self>) -> Html {
-        match &self.state.entries {
-            FetchState::NotFetching => html! {"Yet"},
-            FetchState::Fetching => html! { "Fetching" },
-            FetchState::Success(repos) => {
-                let lastIndex = repos.len() - 1;
-                html! {
-                   for repos.iter().enumerate().map( |(i,repo)| {
-                     let default = "".to_string();
-                     let full_name = repo.full_name.as_ref().unwrap_or(&default);
-                     let url = repo.owner.as_ref().and_then(|owner| owner.avatar_url.as_ref()).unwrap_or(&default);
-                        let marginBottom = if i == lastIndex{ None }else{ Some("mb-10")};
-                     let classes = classes!(Some("card card-side bg-base-100 shadow-xl"), marginBottom);
-                     html! {
-                         <div class={classes}>
-                             <figure class="basis-3/12 avatar"><img class="object-cover" src={url.clone()} alt="Movie" /></figure>
-                             <div class="card-body basis-8/12">
-                                 <h2 class="card-title">{full_name}</h2>
-                                 <p>{"Click the button to watch on Jetflix app."}</p>
-                                 <div class="card-actions justify-end">
-                                     <button class="btn btn-primary">{"Watch"}</button>
-                                 </div>
-                             </div>
-                         </div>
-                     }
-                   })
-                }
-            }
-            FetchState::Failed(err) => html! { err },
-        }
-    }
-
-    fn view_entry_edit_input(&self, keyword: &str, link: &Scope<Self>) -> Html {
+    fn view_keyword_input(&self, link: &Scope<Self>) -> Html {
         let search = move |input: HtmlInputElement| Msg::Search(input.value());
 
         let onkeypress = link.batch_callback(move |e: KeyboardEvent| {
@@ -141,11 +114,58 @@ impl App {
                  <input
                      type="text"
                      placeholder="Search…"
-                     class="input input-bordered flex-grow"
+                     class="input input-bordered"
                      value={self.state.keyword.clone()}
                      {onkeypress}
                  />
             </div>
+        }
+    }
+
+    fn view_repo_list(&self, _link: &Scope<Self>) -> Html {
+        match &self.state.entries {
+            FetchState::NotFetching => html! { "" },
+            FetchState::Fetching => html! {
+            <div class="grid place-content-center">
+                <span class="loading loading-dots loading-lg"></span>
+            </div>
+            },
+            FetchState::Success(repos) => {
+                let last_index = repos.len() - 1;
+                html! {
+                    for repos.iter().enumerate().map( |(i,repo)| {
+                        let default = String::from("");
+                        let avatar_url = repo.owner
+                            .as_ref()
+                            .and_then(|owner| owner.avatar_url.as_ref())
+                            .unwrap_or(&default);
+
+                        // style
+                        let margin_bottom = if i == last_index { None } else { Some("mb-10") };
+                        let classes = classes!(Some("card card-side bg-base-100 shadow-xl"), margin_bottom);
+                         html! {
+                             <div class={classes}>
+                                 <figure class="basis-3/12 avatar"><img class="object-cover" src={avatar_url.clone()} alt="Movie" /></figure>
+                                 <div class="card-body basis-8/12">
+                                     <h2 class="card-title">{repo.full_name.as_ref()}</h2>
+                                     <p>{repo.language.as_ref()}</p>
+                                     <div class="card-actions justify-end flex items-center  space-x-4">
+                                        <div class="flex space-x-2">
+                                         <svg class="fill-slate-600 h-5 w-5 flex-no-shrink fill-current" xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 -960 960 960" width="48"><path d="m323-205 157-94 157 95-42-178 138-120-182-16-71-168-71 167-182 16 138 120-42 178ZM233-80l65-281L80-550l288-25 112-265 112 265 288 25-218 189 65 281-247-149L233-80Zm247-355Z"/></svg>
+                                         <span>{repo.stargazers_count.as_ref()}</span>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                         <svg class="fill-slate-600 h-5 w-5 flex-no-shrink fill-current" xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 -960 960 960" width="48"><path d="M372-120v-606l-90 90-42-42 162-162 162 162-42 42-90-90v320q30-33 71.5-54T607-481q16 0 38 3t41 8l-90-90 42-42 162 162-162 162-42-42 90-90q-16-5-38-8t-45-3q-57 0-104.5 34T432-290v170h-60Z"/></svg>
+                                         <span>{repo.forks_count.as_ref()}</span>
+                                        </div>
+                                     </div>
+                                 </div>
+                             </div>
+                         }
+                    })
+                }
+            }
+            FetchState::Failed(err) => html! { err },
         }
     }
 }

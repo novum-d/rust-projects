@@ -1,4 +1,4 @@
-# Repos
+# ReposResponse
 
 ## Properties
 

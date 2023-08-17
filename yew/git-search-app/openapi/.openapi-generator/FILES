@@ -6,7 +6,7 @@ README.md
 docs/DefaultApi.md
 docs/Owner.md
 docs/Repo.md
-docs/Repos.md
+docs/ReposResponse.md
 git_push.sh
 src/apis/configuration.rs
 src/apis/default_api.rs
@@ -15,4 +15,4 @@ src/lib.rs
 src/models/mod.rs
 src/models/owner.rs
 src/models/repo.rs
-src/models/repos.rs
+src/models/repos_response.rs

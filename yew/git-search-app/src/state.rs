@@ -1,12 +1,13 @@
 use openapi::apis::Error;
 use openapi::{apis::default_api::SearchRepositoriesGetError, models::Repo};
-use serde_derive::{Deserialize, Serialize};
 
+#[derive(Debug)]
 pub struct State {
     pub entries: FetchState<Vec<Repo>>,
     pub keyword: String,
 }
 
+#[derive(Debug)]
 pub enum FetchState<T> {
     NotFetching,
     Fetching,

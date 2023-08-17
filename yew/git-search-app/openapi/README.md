@@ -32,7 +32,7 @@ Class | Method | HTTP request | Description
 
  - [Owner](docs/Owner.md)
  - [Repo](docs/Repo.md)
- - [Repos](docs/Repos.md)
+ - [ReposResponse](docs/ReposResponse.md)
 
 
 To get access to the crate's generated documentation, use:

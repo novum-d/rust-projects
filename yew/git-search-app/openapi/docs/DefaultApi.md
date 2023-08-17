@@ -10,7 +10,7 @@ Method | HTTP request | Description
 
 ## search_repositories_get
 
-> serde_json::Value search_repositories_get(q)
+> crate::models::ReposResponse search_repositories_get(q)
 
 
 ### Parameters
@@ -22,7 +22,7 @@ Name | Type | Description  | Required | Notes
 
 ### Return type
 
-[**serde_json::Value**](serde_json::Value.md)
+[**crate::models::ReposResponse**](ReposResponse.md)
 
 ### Authorization
 
