@@ -15,17 +15,7 @@ properties:
     nullable: false
     format: int64
     example: 0 
-  watchers_count:
-    type: integer
-    nullable: false
-    format: int64
-    example: 0
   forks_count:
-    type: integer
-    nullable: false
-    format: int64
-    example: 0 
-  open_issues_count:
     type: integer
     nullable: false
     format: int64

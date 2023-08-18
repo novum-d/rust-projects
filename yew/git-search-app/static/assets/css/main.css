@@ -10,7 +10,7 @@ main {
   width: clamp(23ch, 80%, 120ch);
 }
 
-.clamp {
+.searchbar-clamp{
   width: clamp(23ch, 80%, 46ch);
 }
 
@@ -26,6 +26,6 @@ main {
   }
 
   .svg-icon {
-    @apply fill-slate-600 h-5 w-5 flex-no-shrink fill-current;
+    @apply fill-current h-5 w-5 shrink-0;
   }
 }

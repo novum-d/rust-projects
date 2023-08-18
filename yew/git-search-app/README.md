@@ -1,12 +1,12 @@
-### tailwind css
+## tailwind css
 
-1. tailwind cssのインストール
+### 1. tailwind cssのインストール
 ```
 npm install -D tailwindcss
 npx tailwindcss init
 ```
 
-2. テンプレートパスの指定
+### 2. テンプレートパスの指定
 ```
 module.exports = {
     content: [
@@ -17,7 +17,7 @@ module.exports = {
 // ...
 ```
 
-3. Tailwind layers
+### 3. Tailwind layers
 
 ```
 // assets/css/main.css
@@ -26,12 +26,14 @@ module.exports = {
 @tailwind utilities;
 ```
 
+### 4. plugin
 
-### daisyUI
+- daisyUI
 
-1. daisyUIのインストール
+1. daisyUI, continer queryプラグインのインストール
 ```
 npm i -D daisyui@latest
+npm i -D @tailwindcss/container-queries
 ```
 
 2. `tailwind.config.js`でプラグイン追加
@@ -49,6 +51,8 @@ cargo install --locked wasm-bindgen-cli
 ```
 
 ### Open API
+
 ```
 npm i -D @openapitools/openapi-generator-cli
 ```
+
