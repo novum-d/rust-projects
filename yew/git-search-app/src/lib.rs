@@ -81,11 +81,11 @@ impl Component for App {
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div data-theme={if self.state.is_light_mode {"light"} else {"dark"} }>
+                 { self.view_header(ctx.link()) }
                  <main class="mt-16 py-12 flex justify-center">
-                     { self.view_header(ctx.link()) }
                      <div class="flex flex-col main-clamp">
                          { self.view_keyword_input(ctx.link()) }
-                         <div class="grow hidden-scrollbar">
+                         <div class="@container grow hidden-scrollbar">
                              { self.view_repo_list(ctx.link()) }
                          </div>
                      </div>
@@ -162,11 +162,11 @@ impl App {
 
                         // style
                         let margin_bottom = if i == last_index { None } else { Some("mb-10") };
-                        let classes = classes!(Some("card card-side bg-base-100 shadow-xl [&>*]:min-w-0 "), margin_bottom);
+                        let classes = classes!(Some("card card-side bg-base-100 shadow-xl [&>*]:min-w-0 @container @xs:flex-col @3xl:flex-row"), margin_bottom);
                          html! {
                              <div class={classes}>
-                                 <figure class="basis-4/12 avatar"><img src={avatar_url.clone()} alt="Movie" /></figure>
-                                 <div class="card-body basis-8/12">
+                                 <figure class="rounded-none avatar @3xl:w-48 @xs:rounded-l-lg @xs:w-full @xs:rounded-t-lg"><img src={avatar_url.clone()} alt="Movie" /></figure>
+                                 <div class="card-body">
                                      <h2 class="card-title inline-block text-ellipsis overflow-hidden whitespace-nowrap">{repo.full_name.as_ref()}</h2>
                                      <p>{repo.language.as_ref()}</p>
                                      <div class="card-actions justify-end flex items-center  space-x-4">
