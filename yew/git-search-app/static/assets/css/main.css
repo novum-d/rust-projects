@@ -10,7 +10,7 @@ html, body {
 }
 
 main {
-  height: calc(100dvh - theme('spacing.16'))
+  height: calc(100dvh - theme('spacing.16'));
 }
 
 .main-clamp {
@@ -18,17 +18,17 @@ main {
 }
 
 .searchbar-clamp{
-  width: clamp(23ch, 80%, 46ch);
+  width: clamp(23ch, 80%, 64ch);
 }
 
 @layer utilities {
   .hidden-scrollbar {
     overflow: scroll;
-    -ms-overflow-style: none; /* IE, Edge 対応 */
-    scrollbar-width: none; /* Firefox 対応 */
+    -ms-overflow-style: none; /* IE, Edge */
+    scrollbar-width: none; /* Firefox */
   }
   .hidden-scrollbar::-webkit-scrollbar {
-    /* Chrome, Safari 対応 */
+    /* Chrome, Safari */
     display: none;
   }
 

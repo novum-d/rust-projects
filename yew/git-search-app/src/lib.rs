@@ -4,10 +4,7 @@ use openapi::models::Repo;
 use state::{FetchState, State};
 use web_sys::{HtmlInputElement, KeyboardEvent};
 use yew::html::Scope;
-use yew::{
-    classes, function_component, html, use_state, Component, Context, ContextProvider, Html,
-    NodeRef, TargetCast,
-};
+use yew::{classes, html, Component, Context, Html, NodeRef, TargetCast};
 
 mod state;
 
@@ -20,13 +17,6 @@ pub enum Msg {
     SetReposFetchState(FetchState<Vec<Repo>>),
     Search(String),
     ChangeTheme,
-}
-
-async fn fetch_repos(keyword: &str) -> Result<Vec<Repo>, Error<SearchRepositoriesGetError>> {
-    let config = Configuration::default();
-    let q = Some(keyword.trim());
-    let search_result = search_repositories_get(&config, q).await?;
-    Ok(search_result.items.unwrap())
 }
 
 impl Component for App {
@@ -162,10 +152,10 @@ impl App {
 
                         // style
                         let margin_bottom = if i == last_index { None } else { Some("mb-10") };
-                        let classes = classes!(Some("card card-side bg-base-100 shadow-xl [&>*]:min-w-0 @container @xs:flex-col @3xl:flex-row"), margin_bottom);
+                        let classes = classes!(Some("card bg-base-100 shadow-xl [&>*]:min-w-0 @container @xl:flex-row @xs:flex-col @xl:card-side"), margin_bottom);
                          html! {
                              <div class={classes}>
-                                 <figure class="rounded-none avatar @3xl:w-48 @xs:rounded-l-lg @xs:w-full @xs:rounded-t-lg"><img src={avatar_url.clone()} alt="Movie" /></figure>
+                                 <figure class="avatar @xl:max-w-[16rem] @xs:max-w-xl"><img src={avatar_url.clone()} alt="Movie" /></figure>
                                  <div class="card-body">
                                      <h2 class="card-title inline-block text-ellipsis overflow-hidden whitespace-nowrap">{repo.full_name.as_ref()}</h2>
                                      <p>{repo.language.as_ref()}</p>
@@ -188,4 +178,11 @@ impl App {
             FetchState::Failed(err) => html! { err },
         }
     }
+}
+
+async fn fetch_repos(keyword: &str) -> Result<Vec<Repo>, Error<SearchRepositoriesGetError>> {
+    let config = Configuration::default();
+    let q = Some(keyword.trim());
+    let search_result = search_repositories_get(&config, q).await?;
+    Ok(search_result.items.unwrap())
 }

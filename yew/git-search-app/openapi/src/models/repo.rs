@@ -21,12 +21,8 @@ pub struct Repo {
     pub language: Option<String>,
     #[serde(rename = "stargazers_count", skip_serializing_if = "Option::is_none")]
     pub stargazers_count: Option<i64>,
-    #[serde(rename = "watchers_count", skip_serializing_if = "Option::is_none")]
-    pub watchers_count: Option<i64>,
     #[serde(rename = "forks_count", skip_serializing_if = "Option::is_none")]
     pub forks_count: Option<i64>,
-    #[serde(rename = "open_issues_count", skip_serializing_if = "Option::is_none")]
-    pub open_issues_count: Option<i64>,
 }
 
 impl Repo {
@@ -36,9 +32,7 @@ impl Repo {
             owner: None,
             language: None,
             stargazers_count: None,
-            watchers_count: None,
             forks_count: None,
-            open_issues_count: None,
         }
     }
 }
