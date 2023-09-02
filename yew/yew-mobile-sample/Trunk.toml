@@ -1,0 +1,18 @@
+[build]
+target = "index.html"
+dist = "dist"
+
+[watch]
+watch = ["src", "static"]
+ignore = ["./src-tauri"]
+
+[serve]
+address = "127.0.0.1"
+port = 1420
+open = false
+
+[[hooks]]
+stage = "pre_build"
+command = "sh"
+command_arguments = ["-c", "npx tailwindcss -i static/assets/css/main.css -o dist/main.css"]
+
