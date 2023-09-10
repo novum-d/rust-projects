@@ -8,10 +8,10 @@
 
 ```
 let full_name = "hamada tomoki";
-name.change_to("hoge"); // 値が変更される不自然
+name.change_to("hamada taro"); // 値が変更される不自然
 
-let full_name = FullName::new("hamada tomoki);
-full_name.change_to("hoge");
+let full_name = FullName::new("hamada", "tomoki);
+full_name.change_to("hamda");
 ```
 
 setter を用意したクラスのインスタンスを生成したことで、自身のあずかり知らぬところでいつの間にか状態が変更され、意図せぬバグを引き起こしてしまう可能があります。このような状態の変更を起因とするバグを防ぐために、最も効果的で強力な防衛策は最初から「不変」として扱うことです。いつの間にか変更されることが問題であるなら、そもそも変更できないようにしてしまえばいいのです。
@@ -24,10 +24,11 @@ setter を用意したクラスのインスタンスを生成したことで、�
 let mut full_name = "hamada tomoki";
 full_name = "hoge";
 
-let mut full_name = FullName::new("hamada tomoki");
-full_name = FullName::new("hoge");
+let mut full_name = FullName::new("hamada", "tomoki");
+full_name = FullName::new("hoge", "huga");
 ```
 
 値は不変ですが、交換することは可能です。「不変」の値を持つ値はそれ自体を変更できません。値の変更は代入操作によって交換することで表現されます。
 
 - 等価性によって比較される
+
