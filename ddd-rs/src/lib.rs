@@ -12,7 +12,7 @@ mod tests {
 
         /* 名前を表示する例。*/
         #[test]
-        fn bad_value_object() {
+        fn bad() {
             // 世界には姓が先に名が後にくる氏名が存在するため、失敗する
             let full_name = "hamada tomoki";
             let tokens = full_name.split(" ").collect::<Vec<&str>>();
@@ -21,7 +21,7 @@ mod tests {
         }
 
         #[test]
-        fn good_value_object() {
+        fn good() {
             let full_name = FullName::new("tomoki", "hamada");
             assert_eq!(full_name.first_name(), "tomoki");
         }
