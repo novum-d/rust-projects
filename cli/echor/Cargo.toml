@@ -6,3 +6,7 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.23", features = ["derive"] }
 # https://docs.rs/clap/2.33.0/clap/struct.Arg.html
+
+[dev-dependencies]
+assert_cmd = "2.0.16"
+predicates = { version = "3.1.3", features = ["float-cmp"] }

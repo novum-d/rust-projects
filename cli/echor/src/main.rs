@@ -12,5 +12,13 @@ fn main() {
             arg!(-n --omit_newline "Do not print newline").num_args(0),
         ])
         .get_matches();
-    println!("{:#?}", mathces);
+
+    let values_ref = mathces.get_many::<String>("text").unwrap();
+    let string_vec = values_ref.cloned().collect::<Vec<_>>();
+    let text = string_vec.join("");
+
+    let omit_newline = mathces.contains_id("omit_newline ");
+    let ending = if omit_newline { "" } else { "\n" };
+
+    print!("{}{}", text, ending);
 }
