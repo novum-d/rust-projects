@@ -1,10 +1,7 @@
-use std::{
-    error::Error,
-    fs::File,
-    io::{self, BufRead, BufReader},
-};
+use std::{error::Error, fs, fs::File, io::{self, BufRead, BufReader}};
 
 use clap::{arg, Command};
+use rand::{distr::Alphanumeric, Rng};
 
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
@@ -25,8 +22,21 @@ pub struct Config {
     number_nonblank_lines: bool,
 }
 
+fn gen_bad_file() -> String {
+    loop {
+        let filename: String = rand::rng()
+            .sample_iter(&Alphanumeric)
+            .take(7)
+            .map(char::from)
+            .collect();
+        if fs::metadata(&filename).is_err() {
+            return filename;
+        }
+    }
+}
+
 pub fn get_args() -> MyResult<Config> {
-    let mathces = Command::new("catr")
+    let matches = Command::new("catr")
         .version("0.1.0")
         .author("novumd <novumd@gmail.com>")
         .about("Rust cat")
@@ -42,13 +52,13 @@ pub fn get_args() -> MyResult<Config> {
         ])
         .get_matches();
 
-    let values_ref = mathces.get_many::<String>("files").unwrap();
+    let values_ref = matches.get_many::<String>("files").unwrap();
     let string_vec = values_ref.cloned().collect::<Vec<_>>();
 
     Ok(Config {
         files: string_vec,
-        number_lines: mathces.contains_id("number"),
-        number_nonblank_lines: mathces.contains_id("number_nonblank"),
+        number_lines: matches.contains_id("number"),
+        number_nonblank_lines: matches.contains_id("number_nonblank"),
     })
 }
 
