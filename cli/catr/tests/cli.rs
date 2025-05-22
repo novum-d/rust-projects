@@ -2,7 +2,7 @@ use anyhow::Result;
 use assert_cmd::Command;
 use predicates::prelude::*;
 use pretty_assertions::assert_eq;
-use rand::{distributions::Alphanumeric, Rng};
+use rand::{distr::Alphanumeric, Rng};
 use std::fs;
 
 const PRG: &str = "catr";
@@ -26,7 +26,7 @@ fn usage() -> Result<()> {
 // --------------------------------------------------
 fn gen_bad_file() -> String {
     loop {
-        let filename: String = rand::thread_rng()
+        let filename: String = rand::rng()
             .sample_iter(&Alphanumeric)
             .take(7)
             .map(char::from)
@@ -42,7 +42,7 @@ fn gen_bad_file() -> String {
 #[test]
 fn skips_bad_file() -> Result<()> {
     let bad = gen_bad_file();
-    let expected = format!("{bad}: .* [(]os error 2[)]");
+    let expected = format!("{bad}: .* [(]os error 2[)]"); // Failed to open blargh: No such file or directory (os error 2)
     Command::cargo_bin(PRG)?
         .arg(&bad)
         .assert()
@@ -54,7 +54,7 @@ fn skips_bad_file() -> Result<()> {
 // --------------------------------------------------
 fn run(args: &[&str], expected_file: &str) -> Result<()> {
     let expected = fs::read_to_string(expected_file)?;
-    let output = Command::cargo_bin(PRG)?.args(args).output().unwrap();
+    let output = Command::cargo_bin(PRG)?.args(args).output()?;
     assert!(output.status.success());
 
     let stdout = String::from_utf8(output.stdout).expect("invalid UTF-8");
@@ -74,8 +74,7 @@ fn run_stdin(
     let output = Command::cargo_bin(PRG)?
         .write_stdin(input)
         .args(args)
-        .output()
-        .unwrap();
+        .output()?;
     assert!(output.status.success());
 
     let stdout = String::from_utf8(output.stdout).expect("invalid UTF-8");

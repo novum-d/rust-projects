@@ -1,4 +1,9 @@
-use std::{error::Error, fs, fs::File, io::{self, BufRead, BufReader}};
+use std::{
+    error::Error,
+    fs,
+    fs::File,
+    io::{self, BufRead, BufReader},
+};
 
 use clap::{arg, Command};
 use rand::{distr::Alphanumeric, Rng};
@@ -6,10 +11,21 @@ use rand::{distr::Alphanumeric, Rng};
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
 pub fn run(config: Config) -> MyResult<()> {
+    // println!("{:#?}", &config);
+    // dbg!(&config);
     for filename in config.files {
         match open(&filename) {
             Err(err) => eprintln!("Failed to open {}: {}", filename, err),
-            Ok(_) => println!("Opened {}", filename),
+            Ok(input) => {
+                for (i, line) in input.lines().enumerate() {
+                    let number_str = if config.number_lines {
+                        format!("{:>6}\t", i + 1)
+                    } else {
+                        String::new()
+                    };
+                    println!("{} {}", number_str, line?);
+                }
+            }
         }
     }
     Ok(())
@@ -17,9 +33,9 @@ pub fn run(config: Config) -> MyResult<()> {
 
 #[derive(Debug)]
 pub struct Config {
-    files: Vec<String>,
-    number_lines: bool,
-    number_nonblank_lines: bool,
+    files: Vec<String>,          // Input files
+    number_lines: bool,          // Number lines
+    number_nonblank_lines: bool, // Number non-blank lines
 }
 
 fn gen_bad_file() -> String {
@@ -30,6 +46,7 @@ fn gen_bad_file() -> String {
             .map(char::from)
             .collect();
         if fs::metadata(&filename).is_err() {
+            // ファイルが存在しない場合
             return filename;
         }
     }
@@ -40,19 +57,25 @@ pub fn get_args() -> MyResult<Config> {
         .version("0.1.0")
         .author("novumd <novumd@gmail.com>")
         .about("Rust cat")
-        .args(&[
-            arg!(files: <FILE> "Input file(s)")
-                .num_args(1..)
-                .default_value("-"),
+        .arg(
+            arg!(files: [FILES] ... "Input file(s)") // <FILES>ではなく、[FILES]とすることで必須引数ではなくなる、
+                .default_values(["-"])
+                .num_args(1..),
+        )
+        .arg(
             arg!(number: -n --number "Number lines")
                 .num_args(0)
                 .conflicts_with("number_nonblank"),
+        )
+        .arg(
             arg!(number_nonblank: -b --"number-nonblank" <TEXT> "Number non-blank lines")
                 .num_args(0),
-        ])
+        )
         .get_matches();
 
-    let values_ref = matches.get_many::<String>("files").unwrap();
+    let values_ref = matches
+        .get_many::<String>("files")
+        .ok_or("Failed to get files")?;
     let string_vec = values_ref.cloned().collect::<Vec<_>>();
 
     Ok(Config {
