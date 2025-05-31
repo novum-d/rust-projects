@@ -5,25 +5,56 @@ use std::{
     io::{self, BufRead, BufReader},
 };
 
-use clap::{arg, Command};
+use clap::{arg, Arg, Command};
 use rand::{distr::Alphanumeric, Rng};
 
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
+const NUMBER: &str = "number";
+const NUMBER_NON_BLANK: &str = "number_nonblank";
+const NUMBER_NON_BLANK_OPTION: &str = "number-nonblank";
+
+const FORMAT: &str = "{:>6}{:>2}\t";
+
+fn create_format(number: usize, line: &str) -> String {
+    format!("{:>6}\t{}", number, line)
+}
+
 pub fn run(config: Config) -> MyResult<()> {
     // println!("{:#?}", &config);
-    // dbg!(&config);
+    dbg!(&config);
     for filename in config.files {
         match open(&filename) {
             Err(err) => eprintln!("Failed to open {}: {}", filename, err),
             Ok(input) => {
-                for (i, line) in input.lines().enumerate() {
-                    let number_str = if config.number_lines {
-                        format!("{:>6}\t", i + 1)
-                    } else {
-                        String::new()
+                let mut i: usize = 0;
+                for line in input.lines() {
+                    let line = match config {
+                        // 空行にも番号を付ける
+                        Config {
+                            number_lines: true, ..
+                        } => {
+                            let line = create_format(i + 1, &line?);
+                            line
+                        }
+
+                        // 空行には番号をつけない
+                        Config {
+                            number_nonblank_lines: true,
+                            ..
+                        } => {
+                            let line = line?;
+                            if line.trim().is_empty() {
+                                i -= 1;
+                                String::new()
+                            } else {
+                                create_format(i + 1, &line)
+                            }
+                        }
+                        _ => line?,
                     };
-                    println!("{} {}", number_str, line?);
+                    i += 1;
+                    println!("{}", line);
                 }
             }
         }
@@ -63,12 +94,18 @@ pub fn get_args() -> MyResult<Config> {
                 .num_args(1..),
         )
         .arg(
-            arg!(number: -n --number "Number lines")
+            Arg::new(NUMBER)
+                .short('n')
+                .long(NUMBER)
+                .help("Number lines")
                 .num_args(0)
-                .conflicts_with("number_nonblank"),
+                .conflicts_with(NUMBER_NON_BLANK),
         )
         .arg(
-            arg!(number_nonblank: -b --"number-nonblank" <TEXT> "Number non-blank lines")
+            Arg::new(NUMBER_NON_BLANK)
+                .short('b')
+                .long(NUMBER_NON_BLANK_OPTION)
+                .help("Number non-blank lines")
                 .num_args(0),
         )
         .get_matches();
@@ -80,8 +117,8 @@ pub fn get_args() -> MyResult<Config> {
 
     Ok(Config {
         files: string_vec,
-        number_lines: matches.contains_id("number"),
-        number_nonblank_lines: matches.contains_id("number_nonblank"),
+        number_lines: matches.get_flag("number"),
+        number_nonblank_lines: matches.get_flag("number_nonblank"),
     })
 }
 
