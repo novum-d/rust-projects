@@ -12,8 +12,6 @@ type MyResult<T> = Result<T, Box<dyn Error>>;
 
 const NUMBER: &str = "number";
 const NUMBER_NON_BLANK: &str = "number_nonblank";
-const NUMBER_NON_BLANK_OPTION: &str = "number-nonblank";
-
 const FORMAT: &str = "{:>6}{:>2}\t";
 
 fn create_format(number: usize, line: &str) -> String {
@@ -104,7 +102,7 @@ pub fn get_args() -> MyResult<Config> {
         .arg(
             Arg::new(NUMBER_NON_BLANK)
                 .short('b')
-                .long(NUMBER_NON_BLANK_OPTION)
+                .long(&NUMBER_NON_BLANK.replace('_', "-"))
                 .help("Number non-blank lines")
                 .num_args(0),
         )

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-clap = "4.5.23"
+clap = { version = "4.5.23", features = ["derive", "string"] }
 rand = "0.9.1"
 anyhow = "1.0.98"
 pretty_assertions = "1.4.1"
