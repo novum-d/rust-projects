@@ -99,13 +99,14 @@ pub fn get_args() -> MyResult<Config> {
     Ok(Config {
         files,
         lines,
-        bytes
+        bytes,
     })
 }
 
 
 pub fn run(config: Config) -> MyResult<()> {
-    for filename in &config.files {
+    let files_len = config.files.len();
+    for (file_num, filename) in config.files.iter().enumerate() {
         match open(filename) {
             Err(e) => {
                 let io_err = e.downcast_ref::<io::Error>();
@@ -122,6 +123,13 @@ pub fn run(config: Config) -> MyResult<()> {
                 eprintln!("{}: {}", filename, err);
             }
             Ok(mut input) => {
+                if files_len > 1 {
+                    println!(
+                        "{}==> {} <==",
+                        if file_num > 0 { "\n" } else { "" },
+                        filename,
+                    );
+                }
                 let output: String = match config {
                     Config { bytes: Some(bytes_count), .. } => {
                         // utf-8文字列が途中で、切れてしまう（8で割り切れない）場合は切り詰める
@@ -136,11 +144,15 @@ pub fn run(config: Config) -> MyResult<()> {
                         // String::from_utf8_lossy(&buffer[..bytes_end_index]).into()
                     }
                     Config { lines, .. } if lines > 0 => {
-                        let mut output = "".to_string();
-                        for line in input.lines().take(config.lines) {
-                            output.push_str(&format!("{}\n", line?));
+                        let mut line = String::from("");
+                        // for _ in input.clone().lines().take(config.lines) {
+                        for _ in 0..config.lines {
+                            let bytes = input.read_line(&mut line)?;
+                            if bytes == 0 {
+                                break;
+                            }
                         }
-                        output
+                        line
                     }
                     _ => { "".to_string() }
                 };
