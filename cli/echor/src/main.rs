@@ -1,7 +1,7 @@
 use clap::{arg, Command};
 
 fn main() {
-    let mathces = Command::new("echor")
+    let matches = Command::new("echor")
         .version("0.1.0")
         .author("novumd <novumd@gmail.com>")
         .about("Rust echo")
@@ -9,16 +9,18 @@ fn main() {
             arg!(text: <TEXT> ... "Input text")
                 .required(true)
                 .num_args(1..),
-            arg!(omit_newline: -n --omit_newline "Do not print newline").num_args(0),
+            arg!(-n --"omit-newline" "Do not print newline").num_args(0),
         ])
         .get_matches();
 
-    let text = mathces
+    let text = matches
         .get_many::<String>("text")
         .unwrap()
-        .map(|s| s.to_string())
+        .cloned()
         .collect::<Vec<_>>();
-    let omit_newline = mathces.get_flag("omit_newline");
+
+    let omit_newline = matches.get_flag("omit-newline");
     let ending = if omit_newline { "" } else { "\n" };
+
     print!("{}{}", text.join(" "), ending);
 }
